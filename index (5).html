@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Supply CRM — Zeds Hub</title>
+<meta name="description" content="Driver pipeline and retention console for the Zeds Hub supply team.">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --rail:#22303f; --accent:#2f6fed; --paper:#f1f3f7; }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{background:var(--paper);color:#161e26;
+       font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;
+       display:flex;flex-direction:column;}
+
+  header{background:var(--rail);color:#fff;flex-shrink:0;
+         padding:10px max(14px, env(safe-area-inset-left)) 10px;
+         padding-top:calc(10px + env(safe-area-inset-top,0px));
+         display:flex;align-items:center;gap:11px;}
+  header img{width:30px;height:30px;display:block;border-radius:7px;}
+  header .t{font-size:16px;font-weight:600;line-height:1.15;}
+  header .t span{display:block;font-size:12.5px;font-weight:400;color:#7d919f;}
+  header a{margin-left:auto;color:#c7d2de;font-size:13px;text-decoration:none;
+           border:1px solid #3a4c5f;padding:5px 12px;border-radius:6px;}
+  header a:hover{color:#fff;border-color:var(--accent);}
+
+  #frame{flex:1;width:100%;border:0;display:block;background:var(--paper);}
+
+  #fallback{display:none;padding:48px 20px;text-align:center;max-width:520px;margin:auto;}
+  #fallback h2{font-weight:600;margin:0 0 10px;}
+  #fallback p{color:#5f6e7b;line-height:1.5;}
+  #fallback a.btn{display:inline-block;margin-top:14px;background:var(--accent);color:#fff;
+                  padding:10px 18px;border-radius:3px;text-decoration:none;font-weight:600;}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.png" alt="Zeds">
+  <div class="t">Supply CRM<span>Zeds Hub</span></div>
+  <a id="direct" href="#" target="_blank" rel="noopener">Open in a new tab</a>
+</header>
+
+<iframe id="frame" title="Supply CRM"></iframe>
+
+<div id="fallback">
+  <h2>Set the app URL first</h2>
+  <p>Open <code>index.html</code> in this repository and put your Apps Script web app
+     URL into <code>APP_URL</code> near the bottom of the file.</p>
+</div>
+
+<script>
+  /* ------------------------------------------------------------------
+     Paste your deployed web app URL between the quotes.
+     It looks like: https://script.google.com/macros/s/AKfy..../exec
+     ------------------------------------------------------------------ */
+  const APP_URL = "";
+
+  const frame = document.getElementById('frame');
+  const direct = document.getElementById('direct');
+
+  if (APP_URL) {
+    // Carry a personal access token through: .../?t=abc123
+    const t = new URLSearchParams(location.search).get('t');
+    const url = APP_URL + (t ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + encodeURIComponent(t) : '');
+    frame.src = url;
+    direct.href = url;
+  } else {
+    frame.style.display = 'none';
+    direct.style.display = 'none';
+    document.getElementById('fallback').style.display = 'block';
+  }
+</script>
+</body>
+</html>
