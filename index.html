@@ -3,77 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Supply CRM — Zeds Hub</title>
+<title>Supply CRM</title>
 <meta name="description" content="Driver pipeline and retention console for the Zeds Hub supply team.">
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#22303f">
 <style>
-  :root{ --rail:#22303f; --accent:#2f6fed; --paper:#f1f3f7; }
-  *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;}
-  body{background:var(--paper);color:#161e26;
-       font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;
-       display:flex;flex-direction:column;}
-
-  header{background:var(--rail);color:#fff;flex-shrink:0;
-         padding:10px max(14px, env(safe-area-inset-left)) 10px;
-         padding-top:calc(10px + env(safe-area-inset-top,0px));
-         display:flex;align-items:center;gap:11px;}
-  header img{width:30px;height:30px;display:block;border-radius:7px;}
-  header .t{font-size:16px;font-weight:600;line-height:1.15;}
-  header .t span{display:block;font-size:12.5px;font-weight:400;color:#7d919f;}
-  header a{margin-left:auto;color:#c7d2de;font-size:13px;text-decoration:none;
-           border:1px solid #3a4c5f;padding:5px 12px;border-radius:6px;}
-  header a:hover{color:#fff;border-color:var(--accent);}
-
-  #frame{flex:1;width:100%;border:0;display:block;background:var(--paper);}
-
-  #fallback{display:none;padding:48px 20px;text-align:center;max-width:520px;margin:auto;}
-  #fallback h2{font-weight:600;margin:0 0 10px;}
-  #fallback p{color:#5f6e7b;line-height:1.5;}
-  #fallback a.btn{display:inline-block;margin-top:14px;background:var(--accent);color:#fff;
-                  padding:10px 18px;border-radius:3px;text-decoration:none;font-weight:600;}
+  html,body{height:100%;margin:0;background:#f1f3f7;overflow:hidden;}
+  #frame{width:100%;height:100%;border:0;display:block;}
+  #setup{display:none;height:100%;place-items:center;text-align:center;padding:24px;
+         font-family:system-ui,'Segoe UI',Roboto,Arial,sans-serif;color:#1b2430;}
+  #setup p{color:#69747f;max-width:420px;line-height:1.5;}
+  code{background:#e6eaf0;padding:2px 6px;border-radius:4px;}
 </style>
 </head>
 <body>
 
-<header>
-  <img src="logo.png" alt="Zeds">
-  <div class="t">Supply CRM<span>Zeds Hub</span></div>
-  <a id="direct" href="#" target="_blank" rel="noopener">Open in a new tab</a>
-</header>
+<iframe id="frame" title="Supply CRM"
+        allow="clipboard-write"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
 
-<iframe id="frame" title="Supply CRM"></iframe>
-
-<div id="fallback">
-  <h2>Set the app URL first</h2>
-  <p>Open <code>index.html</code> in this repository and put your Apps Script web app
-     URL into <code>APP_URL</code> near the bottom of the file.</p>
+<div id="setup">
+  <div>
+    <h2>Almost there</h2>
+    <p>Open <code>index.html</code> in this repository and put your Apps Script
+       web app URL into <code>APP_URL</code>.</p>
+  </div>
 </div>
 
 <script>
-  /* ------------------------------------------------------------------
-     Paste your deployed web app URL between the quotes.
-     It looks like: https://script.google.com/macros/s/AKfy..../exec
-     ------------------------------------------------------------------ */
+  /* The deployed Apps Script web app this page wraps. */
   const APP_URL = "https://script.google.com/macros/s/AKfycbzpHDNF0aCt6VEqsIACjJzt633CJOovwpBpTSnlMnYrBZTMVCVyOOKh3HCCYHI3gIVZwA/exec";
 
-  const frame = document.getElementById('frame');
-  const direct = document.getElementById('direct');
-
   if (APP_URL) {
-    // Carry a personal access token through: .../?t=abc123
+    // Pass a personal access token straight through: .../?t=abc123
     const t = new URLSearchParams(location.search).get('t');
-    const url = APP_URL + (t ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + encodeURIComponent(t) : '');
-    frame.src = url;
-    direct.href = url;
+    document.getElementById('frame').src =
+      APP_URL + (t ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + encodeURIComponent(t) : '');
   } else {
-    frame.style.display = 'none';
-    direct.style.display = 'none';
-    document.getElementById('fallback').style.display = 'block';
+    document.getElementById('frame').style.display = 'none';
+    document.getElementById('setup').style.display = 'grid';
   }
 </script>
 </body>
