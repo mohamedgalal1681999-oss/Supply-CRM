@@ -36,10 +36,12 @@
   const APP_URL = "https://script.google.com/macros/s/AKfycbzpHDNF0aCt6VEqsIACjJzt633CJOovwpBpTSnlMnYrBZTMVCVyOOKh3HCCYHI3gIVZwA/exec";
 
   if (APP_URL) {
-    // Pass a personal access token straight through: .../?t=abc123
-    const t = new URLSearchParams(location.search).get('t');
+    // Pass a mention link straight through to the app: .../?d=<phone>&n=<note>
+    const q = new URLSearchParams(location.search), pass = new URLSearchParams();
+    ['d', 'n'].forEach(function (k) { if (q.get(k)) pass.set(k, q.get(k)); });
+    const extra = pass.toString();
     document.getElementById('frame').src =
-      APP_URL + (t ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + encodeURIComponent(t) : '');
+      APP_URL + (extra ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + extra : '');
   } else {
     document.getElementById('frame').style.display = 'none';
     document.getElementById('setup').style.display = 'grid';
