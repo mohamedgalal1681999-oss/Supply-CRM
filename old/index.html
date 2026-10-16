@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Supply CRM</title>
+<meta name="description" content="Driver pipeline and retention console for the Zeds Hub supply team.">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="theme-color" content="#22303f">
+<style>
+  html,body{height:100%;margin:0;background:#f1f3f7;overflow:hidden;}
+  #frame{width:100%;height:100%;border:0;display:block;}
+  #setup{display:none;height:100%;place-items:center;text-align:center;padding:24px;
+         font-family:system-ui,'Segoe UI',Roboto,Arial,sans-serif;color:#1b2430;}
+  #setup p{color:#69747f;max-width:420px;line-height:1.5;}
+  code{background:#e6eaf0;padding:2px 6px;border-radius:4px;}
+</style>
+</head>
+<body>
 
+<iframe id="frame" title="Supply CRM"
+        allow="clipboard-write"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+<div id="setup">
+  <div>
+    <h2>Almost there</h2>
+    <p>Open <code>index.html</code> in this repository and put your Apps Script
+       web app URL into <code>APP_URL</code>.</p>
+  </div>
+</div>
+
+<script>
+  /* The deployed Apps Script web app this page wraps. */
+  const APP_URL = "https://script.google.com/macros/s/AKfycbzpHDNF0aCt6VEqsIACjJzt633CJOovwpBpTSnlMnYrBZTMVCVyOOKh3HCCYHI3gIVZwA/exec";
+
+  if (APP_URL) {
+    // Pass a mention link straight through to the app: .../?d=<phone>&n=<note>
+    const q = new URLSearchParams(location.search), pass = new URLSearchParams();
+    ['d', 'n'].forEach(function (k) { if (q.get(k)) pass.set(k, q.get(k)); });
+    const extra = pass.toString();
+    document.getElementById('frame').src =
+      APP_URL + (extra ? (APP_URL.indexOf('?') > -1 ? '&' : '?') + extra : '');
+  } else {
+    document.getElementById('frame').style.display = 'none';
+    document.getElementById('setup').style.display = 'grid';
+  }
+</script>
+</body>
+</html>
