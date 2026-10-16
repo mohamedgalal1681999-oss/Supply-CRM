@@ -2010,13 +2010,16 @@ function drawDashboard(){
     };
     const tiles='<div class="dtiles">'+
       tile('Drivers', num(total), who ? esc(who)+'\'s book' : isMgr() ? 'in the whole book' : 'in your book', '', "go('pipeline')")+
-      tile('Driving now', num(live), total ? Math.round(live/total*100)+'% of the book' : '—', 'good', "goStage('Active')")+
+      tile('Driving', num(live), (total ? Math.round(live/total*100)+'% of the book · ' : '')+'drove in the last 5 days', 'good', "goStage('Active')")+
       tile('Calls today', num(calledToday), '<span id="dCallsVs">&nbsp;</span>', '', '')+
       tile('Overdue', num(overdue), overdue ? 'follow-ups past their date' : 'nothing late', overdue?'bad':'', "go('overdue')")+
       tile('At risk', num(atRisk), 'idle 3 to 5 days', atRisk?'warn':'', "go('atRisk')")+
-      '<div class="dtile score" id="dScoreTile" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')">'+
-        '<div class="dl">'+(who?esc(who)+'\'s':isMgr()?'Team':'Your')+' score</div>'+
-        '<div class="dv">…</div><div class="ds">this cycle</div></div>'+
+      (isMgr() && !who
+        ? '<div class="dtile score" id="dScoreTile" onclick="go(\'team\')">'+
+            '<div class="dl">Incentives this cycle</div><div class="dv">…</div><div class="ds">all agents, so far</div></div>'
+        : '<div class="dtile score" id="dScoreTile" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')">'+
+            '<div class="dl">'+(who?esc(who)+'\'s':'Your')+' score</div>'+
+            '<div class="dv">…</div><div class="ds">this cycle</div></div>')+
     '</div>';
 
     /* ---------- stage ring ---------- */
@@ -2078,7 +2081,7 @@ function drawDashboard(){
 
     const fillScore=function(k){
       if(!k || !k.ok) return;
-      const tileEl=document.getElementById('dScoreTile');
+      const tileEl=(isMgr() && !who) ? null : document.getElementById('dScoreTile');   // the team tile is filled below
       if(tileEl){ tileEl.querySelector('.dv').innerHTML=money(k.money);
         tileEl.querySelector('.ds').textContent=k.total.toFixed(1).replace(/\.0$/,'')+' points'+
           (k.next ? ' · '+Math.max(0,k.next.points-k.total).toFixed(1).replace(/\.0$/,'')+' to '+egp(k.next.money) : ''); }
@@ -2095,6 +2098,18 @@ function drawDashboard(){
         }).join('')+'</div>'+
         cycleRing(elapsed, len, k.cycle.daysLeft, len)+'</div>';
     };
+    // the whole team: the sum of what each agent is on course to be paid (the pay scale is per agent)
+    if(isMgr() && !who){
+      const fillTeam=function(r){
+        const el=document.getElementById('dScoreTile'); if(!el || !r || !r.ok) return;
+        el.querySelector('.dv').innerHTML=money(r.totalMoney);
+        const paid=r.rows.filter(function(x){ return x.money>0; }).length;
+        el.querySelector('.ds').textContent=r.rows.length+' agent'+(r.rows.length===1?'':'s')+' · '+paid+' earning so far';
+      };
+      const sk='sb:current', sh=MEMO[sk];
+      if(sh && Date.now()-sh.at < MEMO_MS) fillTeam(sh.data);
+      else run().withSuccessHandler(function(r){ MEMO[sk]={ data:r, at:Date.now() }; if(VIEW==='today') fillTeam(r); }).getScoreboard(SID, 'current');
+    }
     const key='kpi:'+who, hit=MEMO[key];
     if(hit && Date.now()-hit.at < MEMO_MS) fillScore(hit.data);
     else run().withSuccessHandler(function(k){
@@ -2413,8 +2428,9 @@ function drawKpi(){
         '<h4 style="margin:0">'+k.agent+'</h4>'+picker+'</div>'+
         '<div class="stats">'+
           stat(k.total.toFixed(1).replace(/\.0$/,''), k.total > 100 ? 'points — above 100' : 'of 100 points')+
-          stat(money(k.money), k.cycle.closed?'final, cycle closed':'on current form')+
-          (k.next ? stat(money(k.next.money), 'at '+k.next.points+' points', 'quiet') : '')+
+          (KPI_WHO ? stat(money(k.money), k.cycle.closed?'final, cycle closed':'on current form')+
+                     (k.next ? stat(money(k.next.money), 'at '+k.next.points+' points', 'quiet') : '')
+                   : stat('<span class="lnk" onclick="go(\'team\')">Scoreboard</span>', 'incentives are paid per agent', 'quiet'))+
           stat(k.cycle.daysLeft, k.cycle.daysLeft===1?'day left':'days left')+
         '</div>'+
         '<p class="dim" style="margin:14px 0 0">Cycle '+k.cycle.from+' to '+k.cycle.to+
