@@ -164,6 +164,16 @@
   /* The zeds wordmark while we wait, traced from the logo itself so every
      letter sits exactly where it does there. The cyan ring curls in, the
      stem rises out of it, the tick and the letters land, then it fades. */
+  /* scoreboard and payouts */
+  .rk{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:12.5px;
+      background:var(--line2,#eef0f4);color:var(--dim);}
+  .rk.r1{background:#f5c542;color:#4a3500;} .rk.r2{background:#c9ced6;color:#2d333b;} .rk.r3{background:#d9a273;color:#3d2410;}
+  .ptbar{display:inline-block;width:70px;height:6px;border-radius:3px;background:var(--line2,#eef0f4);vertical-align:middle;
+         margin-left:8px;overflow:hidden;}
+  .ptbar i{display:block;height:100%;background:var(--accent,#3b6ee0);border-radius:3px;}
+  .paybadge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;}
+  .paybadge.fin{background:#dcfce7;color:#15803d;} .paybadge.prov{background:#fef3c7;color:#b45309;}
+  .paytot td{font-weight:700;border-top:2px solid var(--line,#e5e7eb);}
   .load{display:flex;flex-direction:column;align-items:center;justify-content:center;
         padding:78px 20px;gap:16px;}
   .zmark{height:54px;width:auto;display:block;overflow:visible;
@@ -2466,37 +2476,102 @@ function drawKpi(){
   });
 }
 
+/* ======================================================================
+   SCOREBOARD — agents only, best first. The running cycle is live; pick a
+   closed cycle to see the figures frozen when it closed — the amounts to
+   transfer — with the total, and download it as Excel.
+   ====================================================================== */
+let SB_CYCLE = 'current', SB_DATA = null;
 function drawTeam(){
   const b=document.getElementById('body');
-  memo('team',
-    function(done){ run().withSuccessHandler(done).getKpiTeam(SID); },
-    function(r){
-    if(!r || !r.ok){ b.innerHTML='<div class="empty">'+((r&&r.msg)||'No answer from the server')+
-      '</div>'; return; }
+  b.innerHTML=loader();
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ b.innerHTML='<div class="empty">'+((r&&r.msg)||'No answer from the server')+'</div>'; return; }
+    if(VIEW!=='team') return;
+    SB_DATA=r;
     const names=['Lead','Activation','Productivity','Reactivation'];
+    const fmtPts=function(v){ return (Number(v)||0).toFixed(1).replace(/\.0$/,''); };
     b.innerHTML =
-      '<div class="panel"><h4>This cycle, by agent</h4>'+
-      '<p class="dim" style="margin:-8px 0 12px">Click an agent to open their full scorecard.</p>'+
-      '<table><thead><tr><th>Agent</th><th class="num">Drivers</th>'+
-      names.map(function(n){ return '<th class="num">'+n+'</th>'; }).join('')+
-      '<th class="num">Points</th><th class="num">Incentive</th></tr></thead><tbody>'+
-      r.rows.map(function(x){
-        return '<tr onclick="KPI_WHO=\''+x.agent+'\';go(\'kpi\')">'+
-          '<td><b>'+x.agent+'</b></td>'+
-          '<td class="num">'+num(x.drivers)+'</td>'+
-          x.rates.map(function(v){ return '<td class="num">'+pct(v)+'</td>'; }).join('')+
-          '<td class="num"><b>'+x.total.toFixed(1).replace(/\.0$/,'')+'</b></td>'+
-          '<td class="num">'+egp(x.money)+'</td>'+
-        '</tr>'; }).join('')+
-      (r.unassigned ? '<tr class="off"><td>Not assigned to anyone</td>'+
-        '<td class="num">'+num(r.unassigned)+'</td>'+
-        '<td class="num dim" colspan="'+(names.length+2)+'">no scorecard until someone owns them</td>'+
-        '</tr>' : '')+
-      '</tbody></table>'+
-      (r.unassigned ? '<p class="dim" style="margin:12px 0 0">'+
-        num(r.total)+' drivers in total. Agent rows cover '+num(r.total-r.unassigned)+
-        ' of them.</p>' : '')+
+      '<div class="panel">'+
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">'+
+          '<select id="sbCycle" onchange="SB_CYCLE=this.value;drawTeam()">'+
+            r.cycles.map(function(c, i){ return '<option value="'+(i===0?'current':c.key)+'"'+(c.key===r.cycle?' selected':'')+'>'+
+              (i===0?'This cycle':'Cycle')+' · '+c.key+'</option>'; }).join('')+
+          '</select>'+
+          (r.final ? '<span class="paybadge fin">Final — frozen when the cycle closed'+(r.savedAt?' ('+esc(r.savedAt)+')':'')+'</span>'
+                   : '<span class="paybadge prov">Running — figures move until the cycle closes</span>')+
+          '<button class="btn" style="margin-left:auto" id="sbXls" onclick="scoreExcel()"'+(r.rows.length?'':' disabled')+'>Download Excel</button>'+
+        '</div>'+
+        '<p class="dim" style="margin:0 0 12px">'+esc(r.from)+' → '+esc(r.to)+' · agents only, best first'+
+          (r.final ? ' · the amounts to transfer for this cycle' : ' · click an agent for their full scorecard')+'</p>'+
+        (r.rows.length ?
+        '<table><thead><tr><th style="width:44px">#</th><th>Agent</th><th class="num">Drivers</th>'+
+          names.map(function(n){ return '<th class="num">'+n+'</th>'; }).join('')+
+          '<th class="num">Points</th><th class="num">Incentive</th></tr></thead><tbody>'+
+          r.rows.map(function(x){
+            return '<tr'+(r.final?'':' onclick="KPI_WHO=\''+esc(x.agent)+'\';go(\'kpi\')"')+'>'+
+              '<td><span class="rk'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</span></td>'+
+              '<td><b>'+esc(x.agent)+'</b>'+(x.active?'':' <span class="dim">(switched off)</span>')+'</td>'+
+              '<td class="num">'+num(x.drivers)+'</td>'+
+              x.kpis.map(function(k){ return '<td class="num">'+pct(k.rate)+
+                '<div class="dim" style="font-size:11.5px">'+fmtPts(k.points)+' pts</div></td>'; }).join('')+
+              '<td class="num"><b>'+fmtPts(x.total)+'</b>'+
+                '<span class="ptbar"><i style="width:'+Math.min(100,Math.max(0,Number(x.total)||0))+'%"></i></span></td>'+
+              '<td class="num"><b>'+egp(x.money)+'</b></td></tr>'; }).join('')+
+          (r.unassigned ? '<tr class="off"><td></td><td>Not assigned to anyone</td><td class="num">'+num(r.unassigned)+'</td>'+
+            '<td class="num dim" colspan="'+(names.length+2)+'">no scorecard until someone owns them</td></tr>' : '')+
+          '<tr class="paytot"><td></td><td>Total</td><td colspan="'+(names.length+2)+'"></td>'+
+            '<td class="num">'+egp(r.totalMoney)+'</td></tr>'+
+        '</tbody></table>'
+        : '<div class="empty">No agent results for this cycle.</div>')+
       '</div>';
+  }).getScoreboard(SID, SB_CYCLE);
+}
+
+function scoreExcel(){
+  const r=SB_DATA; if(!r || !r.rows.length) return;
+  const go=document.getElementById('sbXls'); go.disabled=true; go.textContent='Building…';
+  loadExcelJS(function(){
+    const wb=new window.ExcelJS.Workbook(); wb.creator='Supply CRM'; wb.created=new Date();
+    const ws=wb.addWorksheet('Scoreboard', { views:[{ state:'frozen', ySplit:5 }] });
+    const names=['Lead','Activation','Productivity','Reactivation'];
+    const width=3+names.length*2+2;
+    ws.columns=[{width:5},{width:28},{width:9}].concat(names.map(function(){ return [{width:9},{width:9}]; }).reduce(function(a,b){ return a.concat(b); },[]))
+      .concat([{width:10},{width:15}]);
+    ws.mergeCells(1,1,1,width);
+    ws.getCell(1,1).value='Scoreboard — cycle '+r.from+' → '+r.to;
+    ws.getCell(1,1).font={bold:true,size:14,color:{argb:'FF5000BC'}};
+    ws.mergeCells(2,1,2,width);
+    ws.getCell(2,1).value=(r.final ? 'FINAL — frozen when the cycle closed'+(r.savedAt?' ('+r.savedAt+')':'')+' · the amounts to transfer'
+                                   : 'RUNNING — the cycle is still open; do not pay on these')+' · downloaded '+r.generatedAt;
+    ws.getCell(2,1).font={italic:true,color:{argb: r.final ? 'FF15803D' : 'FFB45309'}};
+    const top=ws.getRow(4), head=ws.getRow(5);
+    top.getCell(1).value='#'; top.getCell(2).value='Agent'; top.getCell(3).value='Drivers';
+    names.forEach(function(n,i){ const c=4+i*2; ws.mergeCells(4,c,4,c+1); top.getCell(c).value=n;
+      head.getCell(c).value='rate'; head.getCell(c+1).value='points'; });
+    top.getCell(width-1).value='Points'; top.getCell(width).value='Incentive (EGP)';
+    [[1],[2],[3],[width-1],[width]].forEach(function(x){ ws.mergeCells(4,x[0],5,x[0]); });
+    [top,head].forEach(function(row){ row.eachCell(function(c){ c.font={bold:true,color:{argb:'FFFFFFFF'}};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF5000BC'}}; c.alignment={vertical:'middle',horizontal:'center'}; }); });
+    r.rows.forEach(function(x,i){
+      const row=ws.getRow(6+i);
+      row.getCell(1).value=x.rank; row.getCell(2).value=x.agent+(x.active?'':' (switched off)'); row.getCell(3).value=Number(x.drivers)||0;
+      x.kpis.forEach(function(k,j){ const c=4+j*2; row.getCell(c).value=Number(k.rate)||0; row.getCell(c).numFmt='0%';
+        row.getCell(c+1).value=Number(k.points)||0; row.getCell(c+1).numFmt='0.0'; });
+      row.getCell(width-1).value=Number(x.total)||0; row.getCell(width-1).numFmt='0.0';
+      row.getCell(width).value=Number(x.money)||0; row.getCell(width).numFmt='#,##0'; row.getCell(width).font={bold:true};
+      if(i%2) for(let c=1;c<=width;c++) row.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8F7FC'}};
+    });
+    const t=ws.getRow(6+r.rows.length);
+    t.getCell(2).value='Total'; t.getCell(width).value=r.totalMoney; t.getCell(width).numFmt='#,##0';
+    for(let c=1;c<=width;c++){ t.getCell(c).font={bold:true}; t.getCell(c).border={top:{style:'medium',color:{argb:'FF5000BC'}}}; }
+    wb.xlsx.writeBuffer().then(function(buf){
+      const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='scoreboard_'+r.from+'_to_'+r.to+(r.final?'':'_running')+'.xlsx';
+      document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      go.disabled=false; go.textContent='Download Excel';
+    }).catch(function(e){ go.disabled=false; go.textContent='Download Excel'; alert('Excel failed: '+(e && e.message ? e.message : e)); });
   });
 }
 
