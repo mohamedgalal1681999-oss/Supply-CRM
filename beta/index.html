@@ -913,7 +913,7 @@
   <div class="nav">
     <div class="brand" id="brandHome" title="Go to dashboard">
       <img class="mark" id="brandMark" alt="Zeds">
-      <div class="txt">Supply CRM<span>Zeds Hub</span></div>
+      <div class="txt">Supply<span>Zeds Hub</span></div>
     </div>
 
     <div class="grp">Overview</div>
@@ -1003,10 +1003,7 @@
 
     <div class="body" id="body">
       <div class="selbar" id="selbar"></div>
-      <div class="load">
-        <div class="word"><span>C</span><span>R</span><span>M</span></div>
-        <p>one moment</p>
-      </div>
+      <div class="load" id="firstLoad"><p>one moment</p></div>
     </div>
   </div>
 </div>
@@ -1594,6 +1591,8 @@ function loader(msg){
     '<p>'+(msg || 'one moment')+'</p>'+
   '</div>';
 }
+// the very first wait, before anything has loaded, shows the same zeds mark
+(function(){ const f = document.getElementById('firstLoad'); if(f) f.outerHTML = loader(); })();
 const hue  = function(st){ return 'var(--'+cls(st)+')'; };
 const tint = function(st){ return 'var(--'+cls(st)+'-bg)'; };
 const swatch = function(st){
