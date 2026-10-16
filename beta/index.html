@@ -1389,8 +1389,22 @@ let BOOK_VER = 0, VER_CHECKING = false, REDRAW_WAITING = false;
 setInterval(checkForChanges, 15000);
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkForChanges(); });
 
+/* A screen left open with nobody at it stops asking after 10 minutes (each question
+   counts against the server's monthly allowance); the first touch, key or mouse
+   movement asks at once and the 15-second rhythm carries on. */
+const IDLE_AFTER = 10 * 60 * 1000;
+let LAST_ACTIVE = Date.now();
+['mousemove', 'mousedown', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach(function(ev){
+  document.addEventListener(ev, function(){
+    const wasIdle = Date.now() - LAST_ACTIVE > IDLE_AFTER;
+    LAST_ACTIVE = Date.now();
+    if(wasIdle) checkForChanges();
+  }, { passive: true, capture: true });
+});
+
 function checkForChanges(){
   if(!SID || !ME || !BOOK || document.hidden || VER_CHECKING) return;
+  if(Date.now() - LAST_ACTIVE > IDLE_AFTER) return;              // nobody there: wait for them
   VER_CHECKING = true;
   google.script.run
     .withFailureHandler(function(){ VER_CHECKING = false; })       // a missed check is fine; the next one comes
