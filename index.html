@@ -1043,6 +1043,21 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* Speed check: open the CRM with ?timing at the end of the address (…/Supply-CRM/?timing) and a
+   small panel lists every request the page makes and how long the round trip took. Off otherwise. */
+var CRM_TIMES = [];
+function crmTiming(fn, ms, size){
+  if (String(location.search).indexOf('timing') < 0) return;
+  CRM_TIMES.unshift(fn + '  ' + (ms / 1000).toFixed(2) + ' s' + (size > 20000 ? '  (' + Math.round(size / 1024) + ' KB)' : ''));
+  CRM_TIMES = CRM_TIMES.slice(0, 14);
+  var p = document.getElementById('crmTimes');
+  if (!p) { p = document.createElement('pre'); p.id = 'crmTimes';
+    p.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:9999;margin:0;padding:8px 10px;font:11.5px/1.45 monospace;' +
+      'background:rgba(20,20,30,.88);color:#e6e6ff;border-radius:8px;pointer-events:none;max-width:360px;';
+    document.body.appendChild(p); }
+  p.textContent = 'round trips, newest first\n' + CRM_TIMES.join('\n');
+}
+
 /* Where the server is. Opened from Google Apps Script, the page talks to Code.gs
    as it always has. Opened anywhere else — GitHub Pages — the same requests go
    to the Supabase server, which runs the same Code.gs. Nothing below changes. */
@@ -1054,10 +1069,11 @@
       if (fn === 'withSuccessHandler') return function(f){ return runner(f, fail); };
       if (fn === 'withFailureHandler') return function(f){ return runner(ok, f); };
       return function(){
-        var args = Array.prototype.slice.call(arguments);
+        var args = Array.prototype.slice.call(arguments), t0 = Date.now();
         fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify({ fn: fn, args: args }) })
           .then(function(r){ return r.text().then(function(t){ var j = null; try { j = JSON.parse(t); } catch (e) {}
+                                                               crmTiming(fn, Date.now() - t0, t.length);
                                                                return { ok: r.ok, status: r.status, j: j }; }); },
                 function(){ return null; })
           .then(function(x){
