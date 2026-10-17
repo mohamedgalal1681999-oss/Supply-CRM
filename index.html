@@ -164,6 +164,13 @@
   /* The zeds wordmark while we wait, traced from the logo itself so every
      letter sits exactly where it does there. The cyan ring curls in, the
      stem rises out of it, the tick and the letters land, then it fades. */
+  /* assign: a number per agent */
+  .seg2{display:inline-flex;border:1px solid var(--line,#e5e7eb);border-radius:8px;overflow:hidden;margin:2px 0 12px;}
+  .seg2 span{padding:6px 12px;font-size:13px;cursor:pointer;color:var(--dim);}
+  .seg2 span.on{background:var(--accent,#3b6ee0);color:#fff;}
+  .aq{display:flex;flex-direction:column;gap:6px;}
+  .aq label{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .aq input{width:90px;text-align:right;}
   /* to-do list */
   .tdlist{display:flex;flex-direction:column;}
   .todo{display:flex;align-items:flex-start;gap:12px;padding:11px 2px;border-top:1px solid var(--line2,#eef0f4);}
@@ -2373,6 +2380,13 @@ function previewAssign(){
       return '<span class="chip'+(APICK.indexOf(a)>-1?' on':'')+'" '+
              'onclick="togglePick(\''+a+'\')">'+a+'</span>'; }).join('');
     const each=Math.floor(r.count/Math.max(1,APICK.length));
+    // how many each: the same for all, or a number per agent
+    APICK.forEach(function(a){ if(AQUOTA[a]===undefined) AQUOTA[a]=each; });
+    const quota = AMODE==='counts' && APICK.length ?
+      '<div class="aq">'+APICK.map(function(a){
+        return '<label><span>'+esc(a)+'</span><input type="number" min="0" step="1" value="'+(AQUOTA[a]||0)+'" '+
+               'oninput="AQUOTA[\''+a+'\']=Math.max(0,Math.floor(Number(this.value)||0));aqTotal('+r.count+')"></label>'; }).join('')+
+      '</div><p class="dim" id="aqSum" style="margin:6px 0 14px"></p>' : '';
 
     box.innerHTML =
       '<h4>Ready to hand out</h4>'+
@@ -2381,14 +2395,28 @@ function previewAssign(){
         return '<span>'+k+' <b>'+r.byStage[k]+'</b></span>'; }).join('')+'</div>'+
       '<p class="dim" style="margin:14px 0 6px">Share them between</p>'+
       '<div class="who2">'+chips+'</div>'+
+      (APICK.length ?
+        '<div class="seg2"><span class="'+(AMODE==='even'?'on':'')+'" onclick="AMODE=\'even\';previewAssign()">Same number each</span>'+
+        '<span class="'+(AMODE==='counts'?'on':'')+'" onclick="AMODE=\'counts\';previewAssign()">A number for each agent</span></div>' : '')+
+      (AMODE==='counts' && APICK.length ? quota :
       '<p class="dim" style="margin:0 0 14px">'+
         (APICK.length ? 'About '+each+' each across '+APICK.length+' agents.'
-                      : 'Pick at least one agent.')+'</p>'+
-      '<button class="btn" onclick="doAssign()"'+(APICK.length?'':' disabled')+'>'+
+                      : 'Pick at least one agent.')+'</p>')+
+      '<button class="btn" id="aGo" onclick="doAssign()"'+(APICK.length?'':' disabled')+'>'+
         'Assign '+r.count+' drivers</button>';
+    if(AMODE==='counts' && APICK.length) aqTotal(r.count);
   }).previewAssign(SID, assignFilter());
 }
 
+let AMODE='even', AQUOTA={};
+/** The total the per-agent numbers ask for, against what the filter found. */
+function aqTotal(avail){
+  const t=APICK.reduce(function(n,a){ return n+(AQUOTA[a]||0); },0);
+  const el=document.getElementById('aqSum'), go=document.getElementById('aGo');
+  if(el) el.innerHTML = 'Total <b>'+num(t)+'</b> of '+num(avail)+' found'+
+    (t>avail ? ' — <span style="color:#c2410c">only '+num(avail)+' can be handed out</span>' : '');
+  if(go){ go.textContent='Assign '+num(Math.min(t,avail))+' drivers'; go.disabled=!t; }
+}
 function togglePick(a){
   const i=APICK.indexOf(a);
   if(i>-1) APICK.splice(i,1); else APICK.push(a);
@@ -2397,6 +2425,7 @@ function togglePick(a){
 
 function doAssign(){
   if(!confirm('Assign these drivers now? Owners will change immediately.')) return;
+  const quota={}; if(AMODE==='counts') APICK.forEach(function(a){ quota[a]=AQUOTA[a]||0; });
   const box=document.getElementById('a-result');
   box.innerHTML='<h4>Assigning…</h4><p class="dim">This can take a moment on a large batch.</p>';
   run().withSuccessHandler(function(r){
@@ -2407,9 +2436,10 @@ function doAssign(){
       Object.keys(r.counts).map(function(k){
         return '<tr><td>'+k+'</td><td class="num">'+r.counts[k]+'</td></tr>'; }).join('')+
       '</tbody></table>'+
-      '<button class="btn ghost" style="margin-top:14px" onclick="drawAssign()">Assign more</button>';
+      (r.short ? '<p class="dim" style="margin-top:10px">'+num(r.short)+' fewer than asked — the filter did not find more.</p>' : '')+
+      '<button class="btn ghost" style="margin-top:14px" onclick="AQUOTA={};drawAssign()">Assign more</button>';
     refreshBook();
-  }).bulkAssign(SID, assignFilter(), APICK, 'even');
+  }).bulkAssign(SID, assignFilter(), APICK, AMODE, quota);
 }
 
 /* Which agent the KPI screen is looking at. Empty means everyone. */
