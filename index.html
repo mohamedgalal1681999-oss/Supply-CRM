@@ -1193,15 +1193,24 @@ function onEnter(id, fn){ $(id).addEventListener('keydown',function(e){
   if(e.key==='Enter') fn(); }); }
 
 
+const PRE = {};          // answers asked for ahead of time (see preFetch)
 /* A stored session gets one silent try. If the server has forgotten it,
    fall back to the sign-in screen. */
 if(SID){
   $('gate').innerHTML = '<i class="gblob b1"></i><i class="gblob b2"></i>'+
     '<div class="gatebox" style="display:block;max-width:340px"><div class="gmain">'+loader('signing you back in')+'</div></div>';
+  // the drivers are asked for at the same time; the session answer is kept and used again by
+  // boot() — one round trip each, side by side, instead of three one after the other
+  (function(sid){
+    const w = PRE.getWorkset = { sid: sid, done: false };
+    google.script.run
+      .withFailureHandler(function(x){ w.done=true; w.err=x||new Error('No answer'); if(w.wait) w.wait[1](w.err); })
+      .withSuccessHandler(function(v){ w.done=true; w.val=v; if(w.wait) w.wait[0](v); }).getWorkset(sid);
+  })(SID);
   google.script.run
     .withFailureHandler(function(){ keepSession(null); location.reload(); })
     .withSuccessHandler(function(r){
-      if(r && r.ok){ enterApp(); }
+      if(r && r.ok){ PRE.getSession = { sid: SID, done: true, val: r }; enterApp(); }
       else { keepSession(null); location.reload(); }    // expired, or a password still to set
     })
     .getSession(SID);
@@ -1264,7 +1273,6 @@ function doChange(){
 /* The two answers every start needs — who you are, and your drivers — are asked for at
    once, side by side, the moment sign-in succeeds (while the success animation plays),
    instead of one after the other once the screen has changed. */
-const PRE = {};
 function preFetch(sid){
   if(!sid) return;
   ['getSession','getWorkset'].forEach(function(fn){
