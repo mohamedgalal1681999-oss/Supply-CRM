@@ -1331,14 +1331,10 @@ function defaultMode(){
   return (window.matchMedia && matchMedia('(max-width: 700px)').matches) ? 'list' : 'kanban';
 }
 let ME=null, VIEW='today', TAB='All', MODE=defaultMode(), DATA=[], COUNTS={};
-try {
-  const saved = localStorage.getItem(VIEW_KEY);
-  if (saved) VIEW = saved;                 // come back to the page you were on
-} catch (e) {}
-
-function rememberView(){
-  try { localStorage.setItem(VIEW_KEY, VIEW); } catch (e) {}
-}
+// Every sign-in and every reload opens on Today (Mohamed's choice) — no flash of Today
+// followed by the page left open last time.
+try { localStorage.removeItem(VIEW_KEY); } catch (e) {}
+function rememberView(){}
 let TOTAL=0, SHOWN=0, PICK=[], PENDING=null;
 
 /* The whole book, fetched once. Every page after that is filtered here in the
