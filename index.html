@@ -1235,8 +1235,31 @@ function doChange(){
     .changePassword(SID, $('g-pass').value, a, b);
 }
 
+/* The two answers every start needs — who you are, and your drivers — are asked for at
+   once, side by side, the moment sign-in succeeds (while the success animation plays),
+   instead of one after the other once the screen has changed. */
+const PRE = {};
+function preFetch(sid){
+  if(!sid) return;
+  ['getSession','getWorkset'].forEach(function(fn){
+    if(PRE[fn] && PRE[fn].sid===sid) return;
+    const e = PRE[fn] = { sid: sid, done: false };
+    google.script.run
+      .withFailureHandler(function(x){ e.done=true; e.err=x||new Error('No answer'); if(e.wait) e.wait[1](e.err); })
+      .withSuccessHandler(function(v){ e.done=true; e.val=v; if(e.wait) e.wait[0](v); })[fn](sid);
+  });
+}
+/** Use a prefetched answer once, if there is one for this session. */
+function takePre(fn, sid, ok, fail){
+  const e=PRE[fn]; if(!e || e.sid!==sid) return false;
+  delete PRE[fn];
+  if(e.done){ if(e.err) fail(e.err); else ok(e.val); } else e.wait=[ok, fail];
+  return true;
+}
+
 /* a short moment of success, then into the app */
 function gateDone(btnId){
+  preFetch(SID);
   const b=$(btnId); if(b) b.classList.add('done');
   setTimeout(function(){
     const box=document.querySelector('.gatebox'); if(box) box.classList.add('leave');
@@ -1245,6 +1268,7 @@ function gateDone(btnId){
 }
 
 function enterApp(){
+  preFetch(SID);                                            // (a reload with a saved session starts here)
   $('gate').style.display='none';
   const sh=$('shell'); sh.style.display='flex';
   const a=document.querySelector('.nav a[data-v="'+VIEW+'"]');
@@ -1368,26 +1392,26 @@ function loadBook(cb){
     cb(); waiting.forEach(function(f){ f(); });
   };
 
-  google.script.run
-    .withFailureHandler(function(err){
+  const failed = function(err){
+    clearTimeout(giveUp);
+    BOOK_PENDING = false;
+    onFail(err);
+  };
+  const arrived = function(w){
+    if(!w || !w.ok){
       clearTimeout(giveUp);
       BOOK_PENDING = false;
-      onFail(err);
-    })
-    .withSuccessHandler(function(w){
-      if(!w || !w.ok){
-        clearTimeout(giveUp);
-        BOOK_PENDING = false;
-        onFail((w && w.msg) || 'Could not load your drivers');
-        return;
-      }
-      BOOK = normaliseBook(unpackBook(w)); BOOK_VER = w.ver || 0;
-      BOOK_AT = Date.now();
-      try { paintBadges(); } catch(e) {}   // counters must never block the page
-      try { loadTodos(); } catch(e) {}     // the to-do list comes along with the book
-      done();
-    })
-    .getWorkset(SID);
+      onFail((w && w.msg) || 'Could not load your drivers');
+      return;
+    }
+    BOOK = normaliseBook(unpackBook(w)); BOOK_VER = w.ver || 0;
+    BOOK_AT = Date.now();
+    try { paintBadges(); } catch(e) {}   // counters must never block the page
+    try { loadTodos(); } catch(e) {}     // the to-do list comes along with the book
+    done();
+  };
+  if(!takePre('getWorkset', SID, arrived, failed))          // asked for already at sign-in?
+    google.script.run.withFailureHandler(failed).withSuccessHandler(arrived).getWorkset(SID);
 }
 /**
  * A write that touches one driver changes one row, so change that row here
@@ -1702,7 +1726,7 @@ function busyNote(on){
 
 /* ---------- boot ---------- */
 function boot(){
-google.script.run.withFailureHandler(onFail).withSuccessHandler(function(s){
+const onSession = function(s){
   if(!s.ok){
     document.getElementById('body').innerHTML =
       '<div class="empty"><h3>Access denied</h3><p>Use your personal link, or ask the system owner to add you.</p></div>';
@@ -1733,16 +1757,18 @@ google.script.run.withFailureHandler(onFail).withSuccessHandler(function(s){
     document.querySelectorAll('.mgrOnly').forEach(function(e){ e.classList.add('show'); });
     if(s.role!=='owner') document.querySelectorAll('.ownerOnly').forEach(function(e){ e.remove(); });
     const sel=document.getElementById('agent'); sel.style.display='inline-block';
-    run().withSuccessHandler(function(ags){
+    (function(ags){                                          // already in the session: no extra request
       AGENTS=ags;
       ags.forEach(function(a){ sel.insertAdjacentHTML('beforeend','<option>'+a+'</option>'); });
       (s.former||[]).forEach(function(f){
         sel.insertAdjacentHTML('beforeend','<option value="'+esc(f.name)+'">'+esc(f.name)+' — switched off ('+f.drivers+')</option>'); });
-    }).getAgents(SID);
+    })(s.teamNames || []);
   }
   refresh();
   if(LINK) followLink();
-}).getSession(SID);
+};
+if(!takePre('getSession', SID, onSession, onFail))
+  google.script.run.withFailureHandler(onFail).withSuccessHandler(onSession).getSession(SID);
 }
 
 function buildTabs(){
@@ -2667,7 +2693,7 @@ function drawTodos(keep){
 let DRV_TEAM = null;
 function todoTeam(){                                        // managers: who to filter by
   if(!isMgr() || DRV_TEAM) return;
-  run().withSuccessHandler(function(r){ if(Array.isArray(r)){ DRV_TEAM=r; if(VIEW==='todos') drawTodos(true); } }).getAgents(SID);
+  DRV_TEAM = (ME && ME.teamNames) || [];
 }
 /** While the page is open: a reminder at the time set (once each). */
 setInterval(function(){
