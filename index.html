@@ -1046,9 +1046,10 @@
 /* Speed check: open the CRM with ?timing at the end of the address (…/Supply-CRM/?timing) and a
    small panel lists every request the page makes and how long the round trip took. Off otherwise. */
 var CRM_TIMES = [];
-function crmTiming(fn, ms, size){
+function crmTiming(fn, ms, size, j){
   if (String(location.search).indexOf('timing') < 0) return;
-  CRM_TIMES.unshift(fn + '  ' + (ms / 1000).toFixed(2) + ' s' + (size > 20000 ? '  (' + Math.round(size / 1024) + ' KB)' : ''));
+  var srv = j && typeof j._ms === 'number' ? '  · server ' + (j._ms / 1000).toFixed(2) + ' s' + (j._rg ? ' in ' + j._rg : '') : '';
+  CRM_TIMES.unshift(fn + '  ' + (ms / 1000).toFixed(2) + ' s' + srv + (size > 20000 ? '  (' + Math.round(size / 1024) + ' KB)' : ''));
   CRM_TIMES = CRM_TIMES.slice(0, 14);
   var p = document.getElementById('crmTimes');
   if (!p) { p = document.createElement('pre'); p.id = 'crmTimes';
@@ -1063,7 +1064,9 @@ function crmTiming(fn, ms, size){
    to the Supabase server, which runs the same Code.gs. Nothing below changes. */
 (function(){
   if (window.google && google.script && google.script.run) return;
-  var API = window.CRM_API || 'https://rdpajghmcxehxyuutrfd.supabase.co/functions/v1/crm';
+  // run the server in Frankfurt, next to the database (Supabase otherwise picks the region nearest
+  // the user, and every one of the server's database round trips then crosses the distance)
+  var API = window.CRM_API || 'https://rdpajghmcxehxyuutrfd.supabase.co/functions/v1/crm?forceFunctionRegion=eu-central-1';
   function runner(ok, fail){
     return new Proxy({}, { get: function(_, fn){
       if (fn === 'withSuccessHandler') return function(f){ return runner(f, fail); };
@@ -1073,7 +1076,7 @@ function crmTiming(fn, ms, size){
         fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify({ fn: fn, args: args }) })
           .then(function(r){ return r.text().then(function(t){ var j = null; try { j = JSON.parse(t); } catch (e) {}
-                                                               crmTiming(fn, Date.now() - t0, t.length);
+                                                               crmTiming(fn, Date.now() - t0, t.length, j);
                                                                return { ok: r.ok, status: r.status, j: j }; }); },
                 function(){ return null; })
           .then(function(x){
