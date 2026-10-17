@@ -1726,11 +1726,16 @@ function busyNote(on){
 
 /* ---------- boot ---------- */
 function boot(){
+let askedAgain = false;
 const onSession = function(s){
-  if(!s.ok){
-    document.getElementById('body').innerHTML =
-      '<div class="empty"><h3>Access denied</h3><p>Use your personal link, or ask the system owner to add you.</p></div>';
-    document.getElementById('bar').style.display='none';
+  if(!s || !s.ok){
+    // never a dead end: ask once more (a session made a moment ago), then back to the sign-in screen
+    if(!askedAgain){ askedAgain = true;
+      google.script.run.withFailureHandler(onFail).withSuccessHandler(onSession).getSession(SID); return; }
+    const why = s && s.mustChange ? 'Set your own password first — sign in again with the one you were given.'
+                                  : 'Your session is no longer valid. Sign in again.';
+    doSignOut();
+    setTimeout(function(){ const e=document.getElementById('g-err'); if(e) e.textContent=why; }, 80);
     return;
   }
   ME=s;
