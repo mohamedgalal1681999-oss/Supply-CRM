@@ -2274,7 +2274,7 @@ function drawAssign(){
             '<option value="unassigned">Unassigned</option>'+
             '<option value="any">Anyone</option>'+
             '<option value="assigned">Already assigned</option>'+
-            opt(AOPT.team)+
+            opt(AOPT.holders || AOPT.team)+
             (AOPT.former||[]).map(function(f){
               return '<option value="'+esc(f.name)+'">'+esc(f.name)+' — switched off ('+f.drivers+')</option>'; }).join('')+
             '</select></div>'+
@@ -3564,7 +3564,7 @@ function paintDriver(){
   const r=DRV, d=r.driver;
   const initial=(d.name||'?').trim().charAt(0).toUpperCase();
   const tabs = isMgr() ? ['Overview','Contact','Notes','To-do','Lifecycle','All Fields']
-                       : ['Overview','Contact','Notes','To-do'];     // agents: calls, notes and their to-dos
+                       : ['Overview','Contact','Notes','To-do','Lifecycle'];   // an agent's Lifecycle: only their own
 
   document.getElementById('body').innerHTML =
     '<button class="btn ghost" onclick="backToList()" style="margin-bottom:13px">&larr; Back</button>'+
@@ -3662,7 +3662,7 @@ function tabBody(){
   if(DTAB==='Contact')    return logPanel()+timelinePanel(DRV.calls.map(callEv));
   if(DTAB==='Notes')      return notesPanel();
   if(DTAB==='To-do')      return todoPanel();
-  if(DTAB==='Lifecycle' && isMgr())  return lifecyclePanel();
+  if(DTAB==='Lifecycle')  return lifecyclePanel();
   if(DTAB==='All Fields' && isMgr()) return allFieldsPanel();
   return metricsPanel()+logPanel()+timelinePanel(DRV.calls.map(callEv).concat(DRV.history.map(stageEv)));
 }
@@ -3765,7 +3765,15 @@ function timelinePanel(events){
 }
 
 function lifecyclePanel(){
-  return timelinePanel(DRV.history.map(stageEv));
+  if(isMgr()) return timelinePanel(DRV.history.map(stageEv));
+  // an agent: their own calls, and the stage moves since the driver became theirs (the server sends only those)
+  const me=DRV.meName, since=DRV.mineSince||'';
+  const ev=(DRV.history||[]).map(stageEv)
+    .concat((DRV.calls||[]).filter(function(c){ return c.agent===me; }).map(callEv));
+  if(since) ev.push({when:since, html:'<div class="ev sys"><b>Assigned to you</b><div class="t">'+esc(since)+'</div></div>'});
+  return '<p class="dim" style="margin:0 0 10px">Your own timeline with this driver: your calls'+
+           (since?', and how the stage moved since he was assigned to you':', and how the stage moved')+'.</p>'+
+         timelinePanel(ev);
 }
 
 function allFieldsPanel(){
