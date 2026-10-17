@@ -164,6 +164,26 @@
   /* The zeds wordmark while we wait, traced from the logo itself so every
      letter sits exactly where it does there. The cyan ring curls in, the
      stem rises out of it, the tick and the letters land, then it fades. */
+  /* to-do list */
+  .tdlist{display:flex;flex-direction:column;}
+  .todo{display:flex;align-items:flex-start;gap:12px;padding:11px 2px;border-top:1px solid var(--line2,#eef0f4);}
+  .todo:first-child{border-top:0;}
+  .todo.done .tdtxt{text-decoration:line-through;color:var(--dim);}
+  .todo.late{background:linear-gradient(90deg,rgba(220,38,38,.06),transparent 60%);}
+  .tdck input{width:18px;height:18px;margin-top:2px;cursor:pointer;accent-color:#15803d;}
+  .tdmain{flex:1;min-width:0;} .tdtxt{font-weight:600;word-break:break-word;}
+  .tdmeta{font-size:12.5px;color:var(--dim);margin-top:3px;} .tdmeta .red,.red{color:#c2410c;}
+  .tdx{cursor:pointer;color:var(--dim);font-size:20px;line-height:1;padding:0 6px;} .tdx:hover{color:#c2410c;}
+  .tdform{display:grid;grid-template-columns:1fr 150px 110px auto;gap:8px;align-items:center;}
+  .tdform.compact{grid-template-columns:1fr 140px 100px;}
+  .tdform input{width:100%;box-sizing:border-box;}
+  @media (max-width:700px){ .tdform,.tdform.compact{grid-template-columns:1fr 1fr;} .tdform input:first-child{grid-column:1 / -1;} }
+  .tdhead{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:0 0 14px;flex-wrap:wrap;}
+  #todoPop{position:fixed;right:18px;bottom:18px;z-index:200;display:flex;flex-direction:column;gap:10px;max-width:330px;}
+  .tdpop{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:4px solid #5000bc;border-radius:10px;
+         padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.15);font-size:13.5px;}
+  .tdpop b{color:#5000bc;} .tdpopa{display:flex;gap:14px;margin-top:8px;}
+  .nav em.hot{background:#fde2e2;color:#b91c1c;}
   /* scoreboard and payouts */
   .rk{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;font-weight:700;font-size:12.5px;
       background:var(--line2,#eef0f4);color:var(--dim);}
@@ -933,6 +953,7 @@
     <div class="grp">Follow-ups</div>
     <a data-v="overdue">Overdue <em id="n-overdue"></em></a>
     <a data-v="due">Due Today <em id="n-due"></em></a>
+    <a data-v="todos" title="Your reminders, with a time">To-do list <em id="n-todos"></em></a>
 
     <div class="grp">Your work</div>
     <a data-v="leads" title="KPI 1 — turn these into onboarding">New leads <em id="n-leads"></em></a>
@@ -1367,6 +1388,7 @@ function loadBook(cb){
       BOOK = normaliseBook(unpackBook(w)); BOOK_VER = w.ver || 0;
       BOOK_AT = Date.now();
       try { paintBadges(); } catch(e) {}   // counters must never block the page
+      try { loadTodos(); } catch(e) {}     // the to-do list comes along with the book
       done();
     })
     .getWorkset(SID);
@@ -1824,6 +1846,7 @@ function refresh(){
     return drawDashboard();
   }
   if(VIEW==='team'){ showChrome(false); return drawTeam(); }
+  if(VIEW==='todos'){ showChrome(false); todoTeam(); return drawTodos(); }
   if(VIEW==='assign'){ showChrome(false); return drawAssign(); }
   if(VIEW==='users'){ showChrome(false); return drawUsers(); }
   if(VIEW==='export'){ showChrome(false); return drawExport(); }
@@ -2490,6 +2513,188 @@ function drawKpi(){
               '<td class="num dim">'+r.eligibleDays+'</td>'+
               statusCell(r.status); });
   });
+}
+
+/* ======================================================================
+   TO-DO LIST — reminders with a time, kept on a driver. Added from the
+   driver's page (or while logging a call); gathered here: late, today,
+   coming up, done lately. While the CRM is open, a reminder pops up at
+   the time set.
+   ====================================================================== */
+let TODOS = null, TODO_WHO = '', TODO_SKEW = 0, TODO_TOLD = {};
+function todoNow(){ return new Date(Date.now() + TODO_SKEW); }          // Cairo time, as the server says
+function todoKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+
+                            ' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function todoParse(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  return m ? new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]) : null; }
+function loadTodos(cb){
+  if(!SID || !ME) return;
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok) return;
+    TODOS = r.todos;
+    const srv = todoParse(r.now); if(srv) TODO_SKEW = srv.getTime() - Date.now();
+    paintTodoBadge();
+    if(cb) cb();
+  }).getTodos(SID, { who: isMgr() ? TODO_WHO : '' });
+}
+/** Mine: an agent's are all theirs; a manager is reminded of what they wrote or of drivers they hold. */
+function todoMine(t){ return !isMgr() || t.by===ME.name || t.owner===ME.name; }
+function paintTodoBadge(){
+  const el=document.getElementById('n-todos'); if(!el || !TODOS) return;
+  const end=todoKey(todoNow()).slice(0,10)+' 23:59';
+  const n=TODOS.filter(function(t){ return !t.done && t.due<=end && todoMine(t); }).length;
+  el.textContent = n ? num(n) : '';
+  el.classList.toggle('hot', TODOS.some(function(t){ return !t.done && t.due<todoKey(todoNow()) && todoMine(t); }));
+}
+/** "Today 15:30", "Tomorrow 09:00", "Tue 20 Oct 10:00", and how late. */
+function todoWhenTxt(t){
+  const d=todoParse(t.due); if(!d) return esc(t.due);
+  const now=todoNow(), day=function(x){ return new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(); };
+  const dd=Math.round((day(d)-day(now))/86400000), hm=t.due.slice(11,16);
+  const lbl = dd===0 ? 'Today '+hm : dd===1 ? 'Tomorrow '+hm : dd===-1 ? 'Yesterday '+hm
+            : d.toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short'})+' '+hm;
+  return lbl;
+}
+function todoLate(t){
+  if(t.done) return '';
+  const d=todoParse(t.due), now=todoNow(); if(!d || d>now) return '';
+  const m=Math.round((now-d)/60000);
+  return m<60 ? m+' min late' : m<1440 ? Math.round(m/60)+' h late' : Math.round(m/1440)+(Math.round(m/1440)===1?' day':' days')+' late';
+}
+function todoItem(t, withDriver){
+  const late=todoLate(t);
+  return '<div class="todo'+(t.done?' done':'')+(late?' late':'')+'" id="td-'+t.id+'">'+
+    '<label class="tdck" title="'+(t.done?'Mark as not done':'Mark as done')+'"><input type="checkbox"'+(t.done?' checked':'')+
+      ' onchange="todoTick(\''+t.id+'\', this.checked)"></label>'+
+    '<div class="tdmain">'+
+      '<div class="tdtxt">'+esc(t.text)+'</div>'+
+      '<div class="tdmeta"><b class="'+(late?'red':'')+'">'+todoWhenTxt(t)+'</b>'+(late?' · <span class="red">'+late+'</span>':'')+
+        (withDriver ? ' · <span class="lnk" onclick="openDriverTab(\''+t.phone+'\',\'To-do\')">'+esc(t.name||t.phone)+'</span> · '+t.phone+
+                      ' · '+esc(t.stage)+(isMgr() ? ' · '+(t.owner?esc(t.owner):'<i>unassigned</i>') : '') : '')+
+        (t.done ? ' · done '+esc(t.done.slice(5))+(t.doneBy && t.doneBy!==ME.name?' by '+esc(t.doneBy):'') : '')+
+        (t.by && t.by!==ME.name ? ' · from '+esc(t.by) : '')+'</div>'+
+    '</div>'+
+    (withDriver && !t.done ? '<div class="tact"><a class="ta" href="tel:+'+t.phone+'">Call</a>'+
+       '<a class="ta wa" href="https://wa.me/'+t.phone+'" target="_blank">WhatsApp</a></div>' : '')+
+    ((isMgr() || t.by===ME.name) ? '<span class="tdx" title="Remove" onclick="todoRemove(\''+t.id+'\')">×</span>' : '')+
+  '</div>';
+}
+function todoReplace(t){
+  if(!TODOS) TODOS=[];
+  const i=TODOS.findIndex(function(x){ return x.id===t.id; });
+  if(i>-1) TODOS[i]=t; else TODOS.push(t);
+  TODOS.sort(function(a,b){ if(!!a.done!==!!b.done) return a.done?1:-1;
+    return a.done ? (a.done<b.done?1:-1) : (a.due<b.due?-1:a.due>b.due?1:0); });
+  paintTodoBadge();
+}
+function todoRepaint(){ if(VIEW==='todos') drawTodos(true); if(DRV && DTAB==='To-do') paintDriver(); }
+function todoTick(id, done){
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ alert((r&&r.msg)||'Could not save'); todoRepaint(); return; }
+    todoReplace(r.todo); todoRepaint(); toast(done ? 'Done' : 'Open again');
+  }).setTodoDone(SID, id, !!done);
+}
+function todoRemove(id){
+  if(!confirm('Remove this to-do?')) return;
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ alert((r&&r.msg)||'Could not remove'); return; }
+    TODOS=(TODOS||[]).filter(function(x){ return x.id!==id; }); paintTodoBadge(); todoRepaint(); toast('Removed');
+  }).deleteTodo(SID, id);
+}
+/** The little form: what, which day, what time. pre is an id prefix so two forms can live on one page. */
+function todoForm(pre, phone, compact){
+  const now=todoNow(), next=new Date(now.getTime()+60*60000);
+  const day=todoKey(next).slice(0,10), hm=String(next.getHours()).padStart(2,'0')+':00';
+  return '<div class="tdform'+(compact?' compact':'')+'">'+
+    '<input id="'+pre+'-txt" maxlength="300" placeholder="What to do — e.g. call back about his documents">'+
+    '<input id="'+pre+'-day" type="date" value="'+day+'">'+
+    '<input id="'+pre+'-time" type="time" value="'+hm+'" step="300">'+
+    (phone ? '<button class="btn" id="'+pre+'-go" onclick="todoAdd(\''+pre+'\',\''+phone+'\')">Add</button>' : '')+
+  '</div>';
+}
+function todoFromForm(pre){
+  const g=function(k){ const e=document.getElementById(pre+'-'+k); return e ? e.value.trim() : ''; };
+  return { text:g('txt'), due: g('day') && g('time') ? g('day')+' '+g('time') : '' };
+}
+function todoAdd(pre, phone, quiet, after){
+  const f=todoFromForm(pre);
+  if(!f.text){ if(!quiet) alert('Write what needs doing'); return false; }
+  if(!f.due){ alert('Pick a day and a time'); return false; }
+  const btn=document.getElementById(pre+'-go'); if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
+  run().withSuccessHandler(function(r){
+    if(btn){ btn.disabled=false; btn.textContent='Add'; }
+    if(!r || !r.ok){ alert((r&&r.msg)||'Could not add'); return; }
+    todoReplace(r.todo); const t=document.getElementById(pre+'-txt'); if(t) t.value='';
+    todoRepaint(); toast('To-do added for '+todoWhenTxt(r.todo)); if(after) after();
+  }).addTodo(SID, phone, f.text, f.due);
+  return true;
+}
+/** On the driver's page. */
+function todoPanel(){
+  const mine=(TODOS||[]).filter(function(t){ return t.phone===String(DRV.driver.phone); });
+  return '<div class="panel"><h4>Add a to-do</h4>'+todoForm('dtd', DRV.driver.phone)+'</div>'+
+    '<div class="panel"><h4>To-dos for this driver</h4>'+
+      (mine.length ? '<div class="tdlist">'+mine.map(function(t){ return todoItem(t,false); }).join('')+'</div>'
+                   : '<p class="dim" style="margin:4px 0">Nothing yet. Add one above — it shows up in your To-do list and reminds you at the time you set.</p>')+
+    '</div>';
+}
+/** The page that gathers them. */
+function drawTodos(keep){
+  const b=document.getElementById('body');
+  if(!keep || !TODOS) b.innerHTML=loader();
+  const paint=function(){
+    if(VIEW!=='todos') return;
+    const list=TODOS||[], now=todoKey(todoNow()), end=now.slice(0,10)+' 23:59';
+    const open=list.filter(function(t){ return !t.done; });
+    const late=open.filter(function(t){ return t.due<now; }),
+          today=open.filter(function(t){ return t.due>=now && t.due<=end; }),
+          later=open.filter(function(t){ return t.due>end; }),
+          done=list.filter(function(t){ return t.done; });
+    const sect=function(title, items, cls, empty){
+      return '<div class="panel"><div class="tph"><h4>'+title+(items.length?' <span class="dim">· '+items.length+'</span>':'')+'</h4></div>'+
+        (items.length ? '<div class="tdlist">'+items.map(function(t){ return todoItem(t,true); }).join('')+'</div>'
+                      : '<p class="dim" style="margin:4px 0">'+empty+'</p>')+'</div>';
+    };
+    const pick = isMgr() ? '<select id="tdWho" onchange="TODO_WHO=this.value;loadTodos(function(){drawTodos(true);})">'+
+        '<option value="">Everyone</option>'+((DRV_TEAM||[]).map(function(a){ return '<option'+(a===TODO_WHO?' selected':'')+'>'+esc(a)+'</option>'; }).join(''))+
+      '</select>' : '';
+    b.innerHTML =
+      '<div class="tdhead"><p class="dim" style="margin:0">Add a to-do from any driver\'s page (the To-do tab, or while logging a call). '+
+        'While the CRM is open, it reminds you at the time you set.</p>'+pick+'</div>'+
+      (late.length ? sect('Late', late, 'late', '') : '')+
+      sect('Today', today, '', late.length ? 'Nothing else today.' : 'Nothing for today.')+
+      sect('Coming up', later, '', 'Nothing planned.')+
+      (done.length ? sect('Done in the last two weeks', done, 'done', '') : '');
+  };
+  if(keep && TODOS) paint(); else loadTodos(paint);
+}
+let DRV_TEAM = null;
+function todoTeam(){                                        // managers: who to filter by
+  if(!isMgr() || DRV_TEAM) return;
+  run().withSuccessHandler(function(r){ if(Array.isArray(r)){ DRV_TEAM=r; if(VIEW==='todos') drawTodos(true); } }).getAgents(SID);
+}
+/** While the page is open: a reminder at the time set (once each). */
+setInterval(function(){
+  if(!TODOS || !ME) return;
+  const now=todoKey(todoNow());
+  TODOS.forEach(function(t){
+    if(t.done || TODO_TOLD[t.id] || !todoMine(t)) return;
+    if(t.due<=now && t.due>=now.slice(0,10)+' 00:00'){            // due today and the time has come
+      TODO_TOLD[t.id]=1; todoRemind(t);
+    }
+  });
+  paintTodoBadge();
+}, 20000);
+function todoRemind(t){
+  const box=document.getElementById('todoPop') || (function(){ const d=document.createElement('div'); d.id='todoPop'; document.body.appendChild(d); return d; })();
+  const el=document.createElement('div'); el.className='tdpop';
+  el.innerHTML='<b>To-do · '+esc(t.due.slice(11,16))+'</b><div>'+esc(t.text)+'</div>'+
+    '<div class="dim">'+esc(t.name||t.phone)+' · '+t.phone+'</div>'+
+    '<div class="tdpopa"><span class="lnk" onclick="openDriverTab(\''+t.phone+'\',\'To-do\');this.closest(\'.tdpop\').remove()">Open</span>'+
+    '<a class="lnk" href="tel:+'+t.phone+'">Call</a>'+
+    '<span class="lnk" onclick="todoTick(\''+t.id+'\',true);this.closest(\'.tdpop\').remove()">Done</span>'+
+    '<span class="lnk dim" onclick="this.closest(\'.tdpop\').remove()">Later</span></div>';
+  box.appendChild(el);
 }
 
 /* ======================================================================
@@ -3362,8 +3567,8 @@ function followLink(){
 function paintDriver(){
   const r=DRV, d=r.driver;
   const initial=(d.name||'?').trim().charAt(0).toUpperCase();
-  const tabs = isMgr() ? ['Overview','Contact','Notes','Lifecycle','All Fields']
-                       : ['Overview','Contact','Notes'];             // agents: calls and notes only
+  const tabs = isMgr() ? ['Overview','Contact','Notes','To-do','Lifecycle','All Fields']
+                       : ['Overview','Contact','Notes','To-do'];     // agents: calls, notes and their to-dos
 
   document.getElementById('body').innerHTML =
     '<button class="btn ghost" onclick="backToList()" style="margin-bottom:13px">&larr; Back</button>'+
@@ -3460,6 +3665,7 @@ function aboutPanel(){
 function tabBody(){
   if(DTAB==='Contact')    return logPanel()+timelinePanel(DRV.calls.map(callEv));
   if(DTAB==='Notes')      return notesPanel();
+  if(DTAB==='To-do')      return todoPanel();
   if(DTAB==='Lifecycle' && isMgr())  return lifecyclePanel();
   if(DTAB==='All Fields' && isMgr()) return allFieldsPanel();
   return metricsPanel()+logPanel()+timelinePanel(DRV.calls.map(callEv).concat(DRV.history.map(stageEv)));
@@ -3501,6 +3707,8 @@ function logPanel(){
 
     '<div class="fld"><label>Next follow-up</label><input type="date" id="fu"></div>'+
     '<div class="fld"><label>Note</label><textarea id="nt" rows="2"></textarea></div>'+
+    '<div class="fld"><label>To-do <span class="dim" style="font-weight:400">— optional, with a time; it reminds you</span></label>'+
+      todoForm('ctd', '', true)+'</div>'+
     '<button class="btn" id="sv" onclick="saveCall(\''+d.phone+'\')">Save call</button></div>';
 }
 
@@ -3836,17 +4044,22 @@ function saveCall(phone){
     DRV.driver.last_call_date   = res.lastCallDate;
     DRV.driver.last_call_status = res.call.call_status;
     if(res.call.follow_up_date) DRV.driver.follow_up_date = res.call.follow_up_date;
+    else if(String(DRV.driver.follow_up_date||'').slice(0,10) && String(DRV.driver.follow_up_date).slice(0,10) <= ymdLocal(today0()))
+      DRV.driver.follow_up_date = '';
     if(res.move){
       if(isMgr()) DRV.history.unshift(res.move);
       DRV.driver.stage = res.move.to_stage;
       DRV.canEditStage = ME.manualStages.indexOf(res.move.to_stage) > -1;
       DRV.inStage = 0;
     }
+    const td=todoFromForm('ctd');
+    if(td.text) todoAdd('ctd', phone, true); else document.getElementById('ctd-txt') && (document.getElementById('ctd-txt').value='');
     paintDriver();
     toast(res.warn ? res.warn : 'Call saved');
     patchBook(phone, function(x){
       x.lc = res.lastCallDate || 'called';
       if(res.call && res.call.follow_up_date) x.fu = res.call.follow_up_date;
+      else if(x.fu && String(x.fu).slice(0,10) <= ymdLocal(today0())) x.fu = '';   // a due follow-up: this call was it
       if(res.stage) x.s = viewStage(res.stage, x.ps);
       if(res.move && res.move.to_stage==='Onboarding' && !x.ob) x.ob = String(res.lastCallDate||'').slice(0,10);
     });
