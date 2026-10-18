@@ -4137,6 +4137,9 @@ function changeOwner(){
 }
 
 function saveCall(phone){
+  const resEl=document.getElementById('res'), ntEl=document.getElementById('nt');
+  if(resEl && resEl.value==='other' && ntEl && !ntEl.value.trim()){
+    alert('For "Other", write in the note what it was.'); ntEl.focus(); return; }
   const btn=document.getElementById('sv');
   btn.disabled=true; btn.textContent='Saving…';
   const sg=document.getElementById('sg');
