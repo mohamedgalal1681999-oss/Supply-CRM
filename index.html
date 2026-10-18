@@ -1013,7 +1013,7 @@
     <div class="tabs" id="tabs"></div>
 
     <div class="bar" id="bar">
-      <input id="q" placeholder="Search by name, phone or platform id">
+      <input id="q" type="search" name="crm-driver-search" autocomplete="off" spellcheck="false" placeholder="Search by name, phone or platform id">
       <select id="agent" style="display:none"><option value="">All agents</option></select>
       <select id="queue" title="Which drivers">
         <option value="">Everyone</option>
@@ -1760,6 +1760,7 @@ function busyNote(on){
 
 /* ---------- boot ---------- */
 function boot(){
+try { const q0=document.getElementById('q'); if(q0) q0.value=''; } catch(e) {}
 let askedAgain = false;
 const onSession = function(s){
   if(!s || !s.ok){
@@ -3440,7 +3441,18 @@ function saveBatch(){
   });
 }
 
+/* If drawing a list ever fails on someone's browser, say so on the screen (with the reason)
+   instead of leaving it blank — a blank screen tells nobody anything. */
 function draw(){
+  try { drawNow(); }
+  catch(e){
+    const b=document.getElementById('body');
+    if(b) b.innerHTML='<div class="empty"><h3>This list could not be drawn</h3><p>'+esc(String(e && e.message || e))+
+      '</p><p class="dim">Send a picture of this to the owner. <span class="lnk" onclick="location.reload()">Reload</span></p></div>';
+    try { console.error(e); } catch(x) {}
+  }
+}
+function drawNow(){
   paintSelBar();
   const b=document.getElementById('body');
   const bar=document.getElementById('selbar');
@@ -3766,7 +3778,9 @@ function metricsPanel(){
 
 function logPanel(){
   const r=DRV, d=r.driver;
-  const rides=Number(d.total_rides||0);
+  // completed trips decide, as for the stage: a booked or cancelled ride is not "on the road"
+  const rides = (d.completed_rides!=='' && d.completed_rides!==null && d.completed_rides!==undefined && isFinite(Number(d.completed_rides)))
+                ? Number(d.completed_rides) : Number(d.total_rides||0);
   const live = rides > 0;
 
   return '<div class="panel"><h4>Log a call</h4>'+
