@@ -1514,7 +1514,8 @@ function quietReload(){
     toast(gained ? gained+' new driver'+(gained===1?'':'s')+' assigned to you'
         : lost   ? lost+' driver'+(lost===1?'':'s')+' moved off your list'
         : 'Updated with the latest data');
-    if(safeToRedraw()) refresh(); else REDRAW_WAITING = true;
+    // fresh data, same place: a list being worked down must not jump back to the top
+    if(safeToRedraw()){ keepListPos(); refresh(); restoreListPos(); } else REDRAW_WAITING = true;
   }).getWorkset(SID);
 }
 
@@ -3480,7 +3481,9 @@ function openBatch(){
     '<p class="dim" style="margin:-8px 0 15px">The same outcome is recorded against '+
       'each one, and each gets its own row in their history.</p>'+
     '<div class="fld"><label>Outcome</label><select id="b-st">'+
-      ME.callStatuses.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></div>'+
+      ME.callStatuses.filter(function(x){ return x!=='Answered'; })      // an answered call needs its own answer
+        .map(function(x){return '<option>'+x+'</option>';}).join('')+'</select>'+
+      '<div class="dim" style="font-size:12px;margin-top:4px">Answered calls are logged one by one, with what they said.</div></div>'+
     '<div class="fld"><label>Next follow-up</label><input type="date" id="b-fu"></div>'+
     '<div class="fld"><label>Note</label><textarea id="b-nt" rows="2"></textarea></div>'+
     '<button class="btn" id="b-save" onclick="saveBatch()">Save on all</button> '+
@@ -3665,7 +3668,27 @@ function listHtml(){
 }
 
 /* ---------- driver page ---------- */
+/* Coming back from a driver's page puts the list back where it was (an agent working down a
+   list lost her place every time). */
+let LIST_POS=null;
+function keepListPos(){
+  if(document.querySelector('#body .dtabs, #body [data-dt]')) return;   // from a driver's page: nothing to keep
+  const b=document.getElementById('body');
+  LIST_POS={ view:VIEW, tab:TAB, body:b?b.scrollTop:0, win:window.scrollY,
+             cols:Array.from(document.querySelectorAll('#body .col .cb')).map(function(c){ return c.scrollTop; }) };
+}
+function restoreListPos(){
+  const p=LIST_POS; LIST_POS=null;
+  if(!p || p.view!==VIEW || p.tab!==TAB) return;
+  const put=function(){
+    const b=document.getElementById('body'); if(b) b.scrollTop=p.body;
+    window.scrollTo(0, p.win);
+    document.querySelectorAll('#body .col .cb').forEach(function(c,i){ if(p.cols[i]!==undefined) c.scrollTop=p.cols[i]; });
+  };
+  put(); requestAnimationFrame(put); setTimeout(put, 120);           // after the redraw has laid out
+}
 function openDriver(phone){
+  keepListPos();
   const id=stamp();
   OPEN_ID=id;
   document.getElementById('body').innerHTML=loader();
@@ -3683,7 +3706,9 @@ function openDriverTab(phone, tab){ WANT_TAB=tab; openDriver(phone); }
 function backToList(){
   const on=document.querySelector('.nav a.on');
   document.getElementById('title').textContent = on ? navTitle(on) : 'Today';
+  DRV=null;
   refresh();
+  restoreListPos();
 }
 
 let DRV=null, DTAB='Overview', OPEN_ID=0;
