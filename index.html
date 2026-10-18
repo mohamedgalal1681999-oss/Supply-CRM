@@ -172,6 +172,7 @@
   .aq label{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .aq input{width:90px;text-align:right;}
   .awpill{display:inline-block;padding:5px 11px;border-radius:14px;background:var(--line2,#eef0f4);font-size:13px;}
+  .awpill.ok{background:#dcfce7;color:#15803d;}
   /* to-do list */
   .tdlist{display:flex;flex-direction:column;}
   .todo{display:flex;align-items:flex-start;gap:12px;padding:11px 2px;border-top:1px solid var(--line2,#eef0f4);}
@@ -2634,15 +2635,27 @@ function drawAgentWork(who){
   run().withSuccessHandler(function(r){
     const c=document.getElementById('agentCalls'); if(!c) return;
     if(!r || !r.ok){ c.innerHTML='<h4>Calls this cycle</h4><p class="dim">'+esc((r&&r.msg)||'Could not load the calls')+'</p>'; return; }
-    const answered=r.calls.filter(function(x){ return x.status==='Answered'; }).length;
-    c.innerHTML='<div class="tph"><h4>Calls this cycle · '+num(r.total)+'</h4><span class="dim">'+num(answered)+' answered'+
-        (r.total>r.calls.length ? ' · newest '+r.calls.length+' shown' : '')+'</span></div>'+
-      (r.calls.length ? '<table><thead><tr><th>When</th><th>Driver</th><th>Picked up?</th><th>What they said</th></tr></thead><tbody>'+
+    const order=['Answered','No Answer','Busy','Switched Off','Called Back Later',"Couldn't reach him",'Wrong Number'];
+    const st=Object.keys(r.byStatus||{}).sort(function(a,b){ return (order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b)); });
+    const onb=r.calls.filter(function(x){ return /^Interested, starting onboarding/.test(x.note); }).length;
+    c.innerHTML='<div class="tph"><h4>Calls this cycle · '+num(r.total)+'</h4>'+
+        (r.calls.length ? '<span class="lnk" id="acToggle" onclick="toggleAgentCalls()">Show the calls</span>' : '')+'</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px">'+
+        st.map(function(k){ return '<span class="awpill'+(k==='Answered'?' ok':'')+'">'+esc(k)+' <b>'+num(r.byStatus[k])+'</b></span>'; }).join('')+
+        (onb ? '<span class="awpill ok">Moved to Onboarding <b>'+num(onb)+'</b></span>' : '')+'</div>'+
+      (r.calls.length ? '<div id="acList" style="display:none;margin-top:10px">'+
+        (r.total>r.calls.length ? '<p class="dim">The newest '+num(r.calls.length)+' of '+num(r.total)+'.</p>' : '')+
+        '<table><thead><tr><th>When</th><th>Driver</th><th>Picked up?</th><th>What they said</th></tr></thead><tbody>'+
         r.calls.map(function(x){ return '<tr onclick="openDriver(\''+x.phone+'\')"><td class="dim">'+esc(x.when)+'</td>'+
           '<td><b>'+esc(x.name||x.phone)+'</b><div class="dim" style="font-size:12px">'+x.phone+'</div></td>'+
-          '<td>'+esc(x.status)+'</td><td>'+esc(x.note)+'</td></tr>'; }).join('')+'</tbody></table>'
+          '<td>'+esc(x.status)+'</td><td>'+esc(x.note)+'</td></tr>'; }).join('')+'</tbody></table></div>'
         : '<p class="dim">No calls yet this cycle.</p>');
   }).getAgentCalls(SID, who);
+}
+function toggleAgentCalls(){
+  const l=document.getElementById('acList'), t=document.getElementById('acToggle'); if(!l) return;
+  const open = l.style.display==='none';
+  l.style.display = open ? '' : 'none'; if(t) t.textContent = open ? 'Hide the calls' : 'Show the calls';
 }
 function showAgentDrivers(who){
   const sel=document.getElementById('agent'); if(sel){ sel.value=who; }
@@ -4187,7 +4200,10 @@ function changeOwner(){
 }
 
 function saveCall(phone){
-  const resEl=document.getElementById('res'), ntEl=document.getElementById('nt');
+  const resEl=document.getElementById('res'), ntEl=document.getElementById('nt'), stEl=document.getElementById('st');
+  // an answered call says what was said — a blank one was saved by mistake and then again, properly
+  if(stEl && stEl.value==='Answered' && resEl && !resEl.value){
+    alert('They picked up — choose what they said.'); resEl.focus(); return; }
   if(resEl && resEl.value==='other' && ntEl && !ntEl.value.trim()){
     alert('For "Other", write in the note what it was.'); ntEl.focus(); return; }
   const btn=document.getElementById('sv');
