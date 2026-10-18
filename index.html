@@ -171,6 +171,7 @@
   .aq{display:flex;flex-direction:column;gap:6px;}
   .aq label{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .aq input{width:90px;text-align:right;}
+  .awpill{display:inline-block;padding:5px 11px;border-radius:14px;background:var(--line2,#eef0f4);font-size:13px;}
   /* to-do list */
   .tdlist{display:flex;flex-direction:column;}
   .todo{display:flex;align-items:flex-start;gap:12px;padding:11px 2px;border-top:1px solid var(--line2,#eef0f4);}
@@ -1014,7 +1015,7 @@
 
     <div class="bar" id="bar">
       <input id="q" type="search" name="crm-driver-search" autocomplete="off" spellcheck="false" placeholder="Search by name, phone or platform id">
-      <select id="agent" style="display:none"><option value="">All agents</option></select>
+      <select id="agent" style="display:none"><option value="">All agents</option><option value="__none__">Unassigned</option></select>
       <select id="queue" title="Which drivers">
         <option value="">Everyone</option>
         <option value="overdue">Overdue</option>
@@ -1607,7 +1608,8 @@ function selectRows(f){
   const start=today0(), end=new Date(); end.setHours(23,59,59);
   let list=BOOK;
 
-  if(f.agent)   list=list.filter(function(d){ return d.o===f.agent; });
+  if(f.agent==='__none__') list=list.filter(function(d){ return !d.o; });          // nobody holds them
+  else if(f.agent)        list=list.filter(function(d){ return d.o===f.agent; });
   if(f.stage)   list=list.filter(function(d){ return d.s===f.stage; });
   if(f.q){
     const q=String(f.q).toLowerCase();
@@ -1803,6 +1805,10 @@ const onSession = function(s){
       (s.former||[]).forEach(function(f){
         sel.insertAdjacentHTML('beforeend','<option value="'+esc(f.name)+'">'+esc(f.name)+' — switched off ('+f.drivers+')</option>'); });
     })(s.teamNames || []);
+    // the filter lists the agents only (Mohamed, 18 Oct) — no manager, no owner; AGENTS (above) stays
+    // the full team for handing a driver to someone from his card
+    Array.from(sel.options).forEach(function(o){ if(o.value && o.value!=='__none__' && (s.agentNames||[]).indexOf(o.value)<0 &&
+      !(s.former||[]).some(function(f){ return f.name===o.value; })) o.remove(); });
   }
   refresh();
   if(LINK) followLink();
@@ -2390,11 +2396,13 @@ function previewAssign(){
              'onclick="togglePick(\''+a+'\')">'+a+'</span>'; }).join('');
     const each=Math.floor(r.count/Math.max(1,APICK.length));
     // how many each: the same for all, or a number per agent
-    APICK.forEach(function(a){ if(AQUOTA[a]===undefined) AQUOTA[a]=each; });
+    // a box nobody typed in follows the current split — it used to keep the split of the first count
+    // seen (13 each when the count was 133 then), however the count or the agents changed after
+    APICK.forEach(function(a){ if(!ATYPED[a]) AQUOTA[a]=each; });
     const quota = AMODE==='counts' && APICK.length ?
       '<div class="aq">'+APICK.map(function(a){
         return '<label><span>'+esc(a)+'</span><input type="number" min="0" step="1" value="'+(AQUOTA[a]||0)+'" '+
-               'oninput="AQUOTA[\''+a+'\']=Math.max(0,Math.floor(Number(this.value)||0));aqTotal('+r.count+')"></label>'; }).join('')+
+               'oninput="ATYPED[\''+a+'\']=1;AQUOTA[\''+a+'\']=Math.max(0,Math.floor(Number(this.value)||0));aqTotal('+r.count+')"></label>'; }).join('')+
       '</div><p class="dim" id="aqSum" style="margin:6px 0 14px"></p>' : '';
 
     box.innerHTML =
@@ -2417,7 +2425,7 @@ function previewAssign(){
   }).previewAssign(SID, assignFilter());
 }
 
-let AMODE='even', AQUOTA={};
+let AMODE='even', AQUOTA={}, ATYPED={};
 /** The total the per-agent numbers ask for, against what the filter found. */
 function aqTotal(avail){
   const t=APICK.reduce(function(n,a){ return n+(AQUOTA[a]||0); },0);
@@ -2446,7 +2454,7 @@ function doAssign(){
         return '<tr><td>'+k+'</td><td class="num">'+r.counts[k]+'</td></tr>'; }).join('')+
       '</tbody></table>'+
       (r.short ? '<p class="dim" style="margin-top:10px">'+num(r.short)+' fewer than asked — the filter did not find more.</p>' : '')+
-      '<button class="btn ghost" style="margin-top:14px" onclick="AQUOTA={};drawAssign()">Assign more</button>';
+      '<button class="btn ghost" style="margin-top:14px" onclick="AQUOTA={};ATYPED={};drawAssign()">Assign more</button>';
     refreshBook();
   }).bulkAssign(SID, assignFilter(), APICK, AMODE, quota);
 }
@@ -2552,6 +2560,7 @@ function drawKpi(){
       '<div class="kgrid" style="margin-bottom:15px">'+cards+'</div>'+
 
       topPerformers()+
+      (KPI_WHO || !isMgr() ? '<div id="agentWork"></div>' : '')+
 
       table('New leads to call',
             'Nobody has moved these into onboarding yet. Oldest first.',
@@ -2561,6 +2570,14 @@ function drawKpi(){
               '<td class="dim">'+r.since+'</td>'+
               '<td class="num">'+(r.age===null?'—':r.age)+'</td>'+
               statusCell(r.action); })+
+
+      table('Moved to Onboarding this cycle',
+            'The calls that moved a lead into onboarding — what counts for KPI 1. Newest first.',
+            [{t:'Driver'},{t:'Onboarded on'}].concat(KPI_WHO?[]:[{t:'By'}]).concat([{t:'Stage now'},{t:'Trips',n:1}]),
+            k.onboardedList||[],
+            function(r){ return '<td><b>'+(r.name||'Unnamed')+'</b><div class="dim" style="font-size:12px">'+r.phone+'</div></td>'+
+              '<td class="dim">'+r.on+'</td>'+(KPI_WHO?'':'<td>'+esc(r.by)+'</td>')+
+              '<td>'+esc(r.stage)+'</td><td class="num">'+r.trips+'</td>'; })+
 
       table('Activation windows still open',
             'Five completed trips within seven days of onboarding. Closest to expiry first.',
@@ -2597,7 +2614,39 @@ function drawKpi(){
               '<td class="num"><b>'+r.remaining+'</b></td>'+
               '<td class="num dim">'+r.eligibleDays+'</td>'+
               statusCell(r.status); });
+    drawAgentWork(k.agent);
   });
+}
+
+/* The agent's own page: the drivers he holds (by stage) and the calls he made this cycle. */
+function drawAgentWork(who){
+  const box=document.getElementById('agentWork'); if(!box) return;
+  const mine=(BOOK||[]).filter(function(d){ return d.o===who; });
+  const by={}; mine.forEach(function(d){ by[d.s]=(by[d.s]||0)+1; });
+  const stages=['New Lead','Onboarding','New Active','Active','Churned','Rejected'];
+  box.innerHTML =
+    '<div class="panel"><div class="tph"><h4>'+esc(who)+'\'s drivers · '+num(mine.length)+'</h4>'+
+      (isMgr() ? '<span class="lnk" onclick="showAgentDrivers(\''+esc(who)+'\')">Open the list</span>' : '')+'</div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">'+stages.filter(function(st){ return by[st]; }).map(function(st){
+        return '<span class="awpill">'+st+' <b>'+num(by[st])+'</b></span>'; }).join('')+
+      (mine.length ? '' : '<span class="dim">None at the moment.</span>')+'</div></div>'+
+    '<div class="panel" id="agentCalls"><h4>Calls this cycle</h4><p class="dim">Loading…</p></div>';
+  run().withSuccessHandler(function(r){
+    const c=document.getElementById('agentCalls'); if(!c) return;
+    if(!r || !r.ok){ c.innerHTML='<h4>Calls this cycle</h4><p class="dim">'+esc((r&&r.msg)||'Could not load the calls')+'</p>'; return; }
+    const answered=r.calls.filter(function(x){ return x.status==='Answered'; }).length;
+    c.innerHTML='<div class="tph"><h4>Calls this cycle · '+num(r.total)+'</h4><span class="dim">'+num(answered)+' answered'+
+        (r.total>r.calls.length ? ' · newest '+r.calls.length+' shown' : '')+'</span></div>'+
+      (r.calls.length ? '<table><thead><tr><th>When</th><th>Driver</th><th>Picked up?</th><th>What they said</th></tr></thead><tbody>'+
+        r.calls.map(function(x){ return '<tr onclick="openDriver(\''+x.phone+'\')"><td class="dim">'+esc(x.when)+'</td>'+
+          '<td><b>'+esc(x.name||x.phone)+'</b><div class="dim" style="font-size:12px">'+x.phone+'</div></td>'+
+          '<td>'+esc(x.status)+'</td><td>'+esc(x.note)+'</td></tr>'; }).join('')+'</tbody></table>'
+        : '<p class="dim">No calls yet this cycle.</p>');
+  }).getAgentCalls(SID, who);
+}
+function showAgentDrivers(who){
+  const sel=document.getElementById('agent'); if(sel){ sel.value=who; }
+  go('pipeline');
 }
 
 /* ======================================================================
