@@ -3334,6 +3334,7 @@ function drawUsers(){
       r.users.map(function(u){
         return '<tr class="'+(u.active?'':'off')+'">'+
           '<td><b>'+u.name+'</b>'+
+            (ME && ME.isOwner ? ' <span class="lnk" style="font-size:12px" onclick="renameUser(\''+u.username+'\',\''+esc(u.name).replace(/'/g,'&#39;')+'\')">rename</span>' : '')+
             (u.role==='owner'?' <span class="tag mgr">owner</span>':
              u.role==='manager'?' <span class="tag mgr">manager</span>':'')+
             (u.active?'':' <span class="tag">switched off</span>')+
@@ -3433,6 +3434,18 @@ function editEmail(username, current){
     toast(r.email ? 'Email saved' : 'Email removed');
     drawUsers();
   }).setUserEmail(SID, username, e);
+}
+
+/* The owner renames someone: their drivers, calls, notes, history, results and to-dos all move
+   to the new name. */
+function renameUser(username, current){
+  const n = prompt('New name for '+current+' (their drivers, calls, notes and results move with them):', current);
+  if(n===null || n.trim()===current) return;
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ alert((r && r.msg) || 'Could not rename'); return; }
+    toast(r.from+' is now '+r.to);
+    setTimeout(function(){ location.reload(); }, 900);         // every list and filter with the new name
+  }).renameUser(SID, username, n);
 }
 
 function removeUser(username){
