@@ -470,7 +470,7 @@
   .tdstats .st .v{font-size:26px;}
   .tdgrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start;}
   /* dashboard tiles */
-  .dtiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-bottom:16px;}
+  .dtiles{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px;margin-bottom:16px;}
   .dtile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
          padding:15px 16px;box-shadow:0 1px 2px var(--shadow);min-width:0;}
   .dtile[onclick]{cursor:pointer;}
@@ -2117,6 +2117,7 @@ function drawDashboard(){
     const tiles='<div class="dtiles">'+
       tile('Drivers', num(total), who ? esc(who)+'\'s book' : isMgr() ? 'in the whole book' : 'in your book', '', "go('pipeline')")+
       tile('Driving', num(live), (total ? Math.round(live/total*100)+'% of the book · ' : '')+'drove in the last 5 days', 'good', "goStage('Active')")+
+      '<div class="dtile" id="dTrips"><div class="dl">Completed trips</div><div class="dv">…</div><div class="ds">this cycle</div></div>'+
       tile('Calls today', num(calledToday), '<span id="dCallsVs">&nbsp;</span>', '', '')+
       tile('Overdue', num(overdue), overdue ? 'follow-ups past their date' : 'nothing late', overdue?'bad':'', "go('overdue')")+
       tile('At risk', num(atRisk), 'idle 3 to 5 days', atRisk?'warn':'', "go('atRisk')")+
@@ -2183,6 +2184,11 @@ function drawDashboard(){
       Object.keys(r.team||{}).forEach(function(a){
         const c=document.getElementById('tw-'+cls(a)); if(c) c.innerHTML=weekCell(r.team[a]);
       });
+      const tt=document.getElementById('dTrips');
+      if(tt && r.trips){
+        tt.querySelector('.dv').textContent=num(r.trips.cycle);
+        tt.querySelector('.ds').textContent='this cycle (since '+r.trips.from.slice(5)+') · '+num(r.trips.total)+' all time';
+      }
     }).getDashStats(SID, who);
 
     const fillScore=function(k){
