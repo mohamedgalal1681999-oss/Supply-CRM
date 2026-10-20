@@ -246,6 +246,14 @@
   html[data-theme="dark"] .abar i{background:#1e3a5f;} .abar b{position:relative;}
   .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;} .fcell{border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
   .fcell span{display:block;font-size:12px;color:var(--dim);} .fcell b{display:block;font-size:22px;} .fcell em{font-style:normal;font-size:11.5px;color:var(--dim);}
+  .kteam .km1{font-size:34px;}
+  .achart .fin{fill:#16a34a;} .achart .fback{fill:#7c3aed;} .achart .fout{fill:#dc2626;}
+  .key.kin{background:#16a34a;} .key.kback{background:#7c3aed;} .key.kout{background:#dc2626;}
+  .ana-say{margin:10px 0 0;font-size:13px;}
+  .speed{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;} .speed div{flex:1;min-width:130px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .speed b{display:block;font-size:24px;} .speed span{font-size:12px;color:var(--dim);}
+  .cmp{margin:12px 0;} .cmp .cl{display:flex;gap:10px;align-items:baseline;font-size:13.5px;} .cmp .cl b{font-size:20px;} .cmp .cl em{font-style:normal;color:var(--dim);font-size:12px;margin-left:auto;}
+  .cmp .fb i.g{background:#16a34a;} .cmp .fb i.r{background:#94a3b8;}
   .awpill{display:inline-block;padding:5px 11px;border-radius:14px;background:var(--line2,#eef0f4);font-size:13px;}
   .awpill.ok{background:#dcfce7;color:#15803d;}
   /* to-do list */
@@ -2689,7 +2697,19 @@ function drawKpi(){
         return '<div class="lstep'+(got?' got':'')+(nxt?' next':'')+'"><span class="lp">'+p[0]+'</span>'+
           '<span class="lm">EGP '+num(p[1])+'</span></div>'; }).join('')+'</div>';
 
-    const hero =
+    // the whole team: no points gauge or pay ladder (those are each agent's own) — the team's
+    // incentives, and how many agents stand at each pay step
+    const teamHero =
+      '<div class="khero">'+
+        '<div class="kteam" id="kTeamPay"><div class="dim">Incentives this cycle</div><div class="km1">…</div><div class="dim" id="kTeamSub"></div></div>'+
+        '<div class="kmoney"><div class="dim" style="margin-bottom:6px">Agents at each pay step</div><div class="ladder" id="kTeamLadder">'+
+          ['Below '+(steps[0]?steps[0][0]:50)].concat(steps.map(function(p){ return p[0]+'+'; })).map(function(l){
+            return '<div class="lstep"><span class="lp">…</span><span class="lm">'+l+'</span></div>'; }).join('')+'</div></div>'+
+        '<div class="kcycle">'+ringSvg((len-left)/len, 92, 9, 'cyc')+
+          '<div class="kcv"><b>'+left+'</b><span>'+(left===1?'day left':'days left')+'</span></div>'+
+          '<div class="dim" style="font-size:12px;text-align:center;margin-top:6px">'+k.cycle.from.slice(5)+' → '+k.cycle.to.slice(5)+'</div></div>'+
+      '</div>';
+    const hero = !one ? teamHero :
       '<div class="khero">'+
         '<div class="kgauge">'+ringSvg(frac, 168, 14, 'big')+
           '<div class="kgv"><b data-count="'+k.total+'" data-dec="1">0</b><span>of 100 points</span></div></div>'+
@@ -2729,7 +2749,26 @@ function drawKpi(){
       (k.unmeasured ? '<div class="note">'+num(k.unmeasured)+' driver'+(k.unmeasured===1?' has':'s have')+
         ' no starting trip count for this cycle yet, so their trips show as zero. The next sync or tonight\'s run sets it.</div>' : '');
     animateKpi();
+    if(!one) kpiTeamHero(steps);
   });
+}
+function kpiTeamHero(steps){
+  if(!can('scoreboard')){ const el=document.getElementById('kTeamPay'); if(el) el.innerHTML='<div class="dim">The team\'s numbers below are the four KPIs over every book.</div>'; return; }
+  run().withSuccessHandler(function(sb){
+    const pay=document.getElementById('kTeamPay'); if(!pay || !sb || !sb.ok) return;
+    const rows=(sb.rows||[]), total=rows.reduce(function(a,x){ return a+Number(x.money||0); },0);
+    const avg=rows.length ? rows.reduce(function(a,x){ return a+Number(x.total||0); },0)/rows.length : 0;
+    pay.querySelector('.km1').innerHTML=money(total);
+    document.getElementById('kTeamSub').innerHTML=rows.length+' agents · average '+avg.toFixed(1)+' points · <span class="lnk" onclick="go(\'team\')">Scoreboard</span>';
+    const bands=[0].concat(steps.map(function(p){ return p[0]; }));            // ascending: below 50, 50+, 60+ …
+    const cnt=bands.map(function(lo,i){ const hi=i<bands.length-1?bands[i+1]:Infinity;
+      return rows.filter(function(x){ return x.total>=lo && x.total<hi; }).length; });
+    document.querySelectorAll('#kTeamLadder .lstep').forEach(function(el,i){
+      el.querySelector('.lp').textContent=cnt[i]+(cnt[i]===1?' agent':' agents');
+      el.classList.toggle('got', cnt[i]>0 && i>0);
+      el.title=rows.filter(function(x){ const lo=bands[i], hi=i<bands.length-1?bands[i+1]:Infinity; return x.total>=lo && x.total<hi; }).map(function(x){ return x.agent; }).join(', ');
+    });
+  }).getScoreboard(SID, 'current');
 }
 
 /* ---------- Analytics: how Zed's supply moved, for any range ----------
@@ -2807,35 +2846,66 @@ function anaPay(points){
   for(let i=0;i<t.length;i++) if(points>=t[i][0]) return t[i][1];
   return 0;
 }
+/* supply in and out, a day at a time: activations and comebacks up, churn down */
+function anaFlow(flow){
+  const W=760, H=210, mid=H/2-4, n=flow.length;
+  const mx=Math.max(1, Math.max.apply(null, flow.map(function(f){ return Math.max(f.activated+f.back, f.churned); })));
+  const padL=12+String(mx).length*8, bw=(W-padL)/n, sc=(H/2-26)/mx;
+  let g='<line x1="'+padL+'" x2="'+W+'" y1="'+mid+'" y2="'+mid+'" class="grid"/>'+
+        '<text x="'+(padL-6)+'" y="'+(mid-(mx*sc)+3)+'" class="ax" text-anchor="end">+'+mx+'</text>'+
+        '<text x="'+(padL-6)+'" y="'+(mid+(mx*sc)+3)+'" class="ax" text-anchor="end">−'+mx+'</text>';
+  flow.forEach(function(f,i){
+    const x=padL+i*bw+bw*0.15, w=Math.max(2,bw*0.7), up=f.activated+f.back;
+    if(f.activated) g+='<rect x="'+x+'" y="'+(mid-f.activated*sc)+'" width="'+w+'" height="'+(f.activated*sc)+'" class="fin"><title>'+f.d+': '+f.activated+' activated</title></rect>';
+    if(f.back) g+='<rect x="'+x+'" y="'+(mid-up*sc)+'" width="'+w+'" height="'+(f.back*sc)+'" class="fback"><title>'+f.d+': '+f.back+' back from churn</title></rect>';
+    if(f.churned) g+='<rect x="'+x+'" y="'+mid+'" width="'+w+'" height="'+(f.churned*sc)+'" class="fout"><title>'+f.d+': '+f.churned+' churned</title></rect>';
+    if(i%Math.ceil(n/12)===0 || i===n-1) g+='<text x="'+(x+w/2)+'" y="'+(H-4)+'" class="ax" text-anchor="middle">'+f.d.slice(8)+'/'+f.d.slice(5,7)+'</text>';
+  });
+  return '<svg class="achart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+g+'</svg>';
+}
+function anaCompare(title, aLbl, aN, aOf, bLbl, bN, bOf, unit){
+  const pa=aOf?aN/aOf:0, pb=bOf?bN/bOf:0, x=pb>0?pa/pb:0;
+  const bar=function(lbl,n,of,p,cls){ return '<div class="cmp"><div class="cl"><span>'+lbl+'</span><b>'+(of?Math.round(p*100)+'%':'—')+'</b><em>'+num(n)+' of '+num(of)+'</em></div>'+
+    '<div class="fb"><i class="'+cls+'" style="width:'+Math.max(2,Math.round(p*100))+'%"></i></div></div>'; };
+  return '<div class="panel"><h4>'+title+'</h4>'+bar(aLbl,aN,aOf,pa,'g')+bar(bLbl,bN,bOf,pb,'r')+
+    '<p class="ana-say">'+(aOf && bOf && pb>0 ? (x>=1.05 ? '<b>'+x.toFixed(1)+'×</b> more likely to '+unit+' when called.' :
+        x<=0.95 ? 'Calling made no difference here yet.' : 'About the same either way.') :
+        aOf && !bOf ? 'Everyone in this range was called.' : 'Not enough of them in this range yet.')+'</p></div>';
+}
 function paintAnalytics(r){
   const b=document.getElementById('body'), N=r.now, P=r.prev;
   r.series.forEach(function(x){ x.na=Math.max(0,(x.calls||0)-(x.answered||0)); });
   const pct2=function(a,c){ return c ? Math.round(a/c*100)+'%' : '—'; };
   const presets=[['cycle','This cycle'],['lastcycle','Last cycle'],['7','7 days'],['30','30 days'],['90','90 days'],['custom','Pick dates']];
-  const working = r.agents.reduce(function(s,a){ return s+(ANA.agent && a.agent!==ANA.agent ? 0 : a.working); },0);
+  const mine = r.agents.filter(function(a){ return !ANA.agent || a.agent===ANA.agent; });
+  const workingNow = mine.reduce(function(s,a){ return s+a.working; },0);
+  const wStart = (r.series.find(function(x){ return x.working!==null && x.working!==undefined; })||{}).working;
+  const net = (N.activated+N.back)-N.churned, netP=(P.activated+P.back)-P.churned;
+  const days=Math.max(1,N.days||r.days);
+  const perDriver = workingNow ? (N.trips/days/workingNow) : 0;
+  const L=r.leadsIn||{}, Ch=r.churnIn||{}, BK=r.backlog||{}, CC=r.conc||{};
   const tiles=[
-    ['New leads', N.leads, P.leads, 'signed up in the range', false],
-    ['Onboarded', N.onboarded, P.onboarded, pct2(N.onboarded, N.leads)+' of the new leads', false],
-    ['Activated', N.activated, P.activated, '5 trips inside their first week', false],
-    ['Completed trips', N.trips, P.trips, N.days ? num(Math.round(N.trips/Math.max(1,N.days)))+' a day' : 'counted from '+(r.tripsSince||'tonight'), false],
-    ['Calls', N.calls, P.calls, pct2(N.answered, N.calls)+' answered', false],
-    ['Churned', N.churned, P.churned, 'stopped driving', true],
-    ['Back from churn', N.back, P.back, 'drove again', false],
-    ['Working drivers', working, null, 'New Active + Active, now', false]
+    ['Working drivers', workingNow, null, (wStart!==undefined && wStart!==null ? (workingNow-wStart>=0?'+':'')+num(workingNow-wStart)+' since the range began' : 'New Active + Active, now'), false],
+    ['Net supply change', net, netP, num(N.activated)+' activated + '+num(N.back)+' back − '+num(N.churned)+' churned', false],
+    ['Completed trips', N.trips, P.trips, num(Math.round(N.trips/days))+' a day · '+(perDriver?perDriver.toFixed(1):'—')+' per working driver', false],
+    ['Onboarded', N.onboarded, P.onboarded, pct2(N.onboarded, N.leads)+' of '+num(N.leads)+' new leads', false],
+    ['Activated', N.activated, P.activated, '5 trips in their first week', false],
+    ['Churned', N.churned, P.churned, (workingNow?Math.round(N.churned/Math.max(1,workingNow+N.churned)*100)+'% of the working book':'stopped driving'), true],
+    ['Calls', N.calls, P.calls, pct2(N.answered, N.calls)+' answered · '+(N.onboarded?Math.round(N.calls/N.onboarded):'—')+' calls per onboarding', false],
+    ['First call within 2 days', L.leads?Math.round((L.within2||0)/L.leads*100):0, null, num(L.within2||0)+' of '+num(L.leads||0)+' new leads · '+num(L.never||0)+' never called', false]
   ];
-  // the forecast: this cycle at today's pace
   const C=r.cycle, f=C.days/Math.max(1,C.elapsed), so=C.sofar;
-  const fc=[['Completed trips', so.trips], ['Onboarded', so.onboarded], ['Activated', so.activated], ['Calls', so.calls], ['Back from churn', so.back]]
+  const fc=[['Completed trips', so.trips], ['Onboarded', so.onboarded], ['Activated', so.activated], ['Back from churn', so.back], ['Churned', so.churned]]
     .map(function(x){ return '<div class="fcell"><span>'+x[0]+'</span><b>'+num(Math.round(x[1]*f))+'</b><em>'+num(x[1])+' so far</em></div>'; }).join('');
   const sortKey = ANA.sort || 'trips';
-  const ag = r.agents.slice().sort(function(a,b){ return (b[sortKey]||0)-(a[sortKey]||0); });
+  const ag = mine.slice().sort(function(a,b){ return (b[sortKey]||0)-(a[sortKey]||0); });
   const mx = {}; ['book','working','onboarded','activated','churned','back','calls','trips'].forEach(function(k){ mx[k]=Math.max(1, Math.max.apply(null, ag.map(function(a){ return a[k]||0; }))); });
   const bar=function(a,k){ return '<td class="num"><div class="abar"><i style="width:'+Math.round((a[k]||0)/mx[k]*100)+'%"></i><b>'+num(a[k]||0)+'</b></div></td>'; };
   const th=function(k,l){ return '<th class="num sortable'+(sortKey===k?' on':'')+'" onclick="ANA.sort=\''+k+'\';paintAnalytics(ANA_LAST)">'+l+'</th>'; };
-  // closed cycles: points per agent
   const cyKeys=[]; r.cycles.forEach(function(c){ if(cyKeys.indexOf(c.cycle)<0) cyKeys.push(c.cycle); });
   const cyAgents=[]; r.cycles.forEach(function(c){ if(c.agent!=='Everyone' && cyAgents.indexOf(c.agent)<0 && r.agents.some(function(a){ return a.agent===c.agent; })) cyAgents.push(c.agent); });
   const cyPaid=cyKeys.map(function(k){ return r.cycles.filter(function(c){ return c.cycle===k && cyAgents.indexOf(c.agent)>-1; }).reduce(function(s,c){ return s+c.money; },0); });
+  const ageMax=Math.max(1,BK.a0||0,BK.a1||0,BK.a2||0,BK.a3||0,BK.a4||0);
   ANA_LAST=r;
   b.innerHTML =
     '<div class="panel ana-top"><div class="ana-ctl">'+
@@ -2845,42 +2915,66 @@ function paintAnalytics(r){
       '<select onchange="ANA.agent=this.value;drawAnalytics()"><option value="">Everyone</option>'+
         (ME.agentNames||[]).map(function(a){ return '<option'+(a===ANA.agent?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+'</select>'+
     '</div><div class="dim ana-sub">'+r.from+' → '+r.to+' ('+r.days+' days)'+(ANA.agent?' · '+esc(ANA.agent):' · the whole team')+
-      ' · compared with '+r.prevFrom+' → '+r.prevTo+'</div></div>'+
-    '<div class="ana-tiles">'+tiles.map(function(t){
-      return '<div class="atile"><div class="al">'+t[0]+'</div><div class="av">'+num(t[1])+'</div>'+
+      ' · ▲▼ against '+r.prevFrom+' → '+r.prevTo+'</div></div>'+
+    '<div class="ana-tiles">'+tiles.map(function(t,i){
+      return '<div class="atile"><div class="al">'+t[0]+'</div><div class="av">'+(i===7?t[1]+'%':(i===1&&t[1]>0?'+':'')+num(t[1]))+'</div>'+
         '<div class="as">'+(t[2]===null?'':anaDelta(t[1],t[2],t[4])+' <span class="dim">·</span> ')+'<span class="dim">'+t[3]+'</span></div></div>'; }).join('')+'</div>'+
     '<div class="dgrid">'+
+      '<div class="panel"><div class="tph"><h4>Is the supply growing?</h4><span class="dim"><i class="key kin"></i> activated <i class="key kback"></i> back <i class="key kout"></i> churned</span></div>'+
+        anaFlow(r.flow||[])+'<p class="ana-say">'+(net>0?'The book grew by <b>'+num(net)+'</b> working drivers':'The book shrank by <b>'+num(-net)+'</b> working drivers')+' in this range'+
+        (netP!==0||net!==0?' ('+(netP>=0?'+':'')+num(netP)+' the period before).':'.')+'</p></div>'+
       '<div class="panel"><div class="tph"><h4>Completed trips a day</h4><span class="dim"><i class="key k1"></i> this range <i class="key kp"></i> the period before</span></div>'+
         (r.tripsSince ? anaBars(r.series,'trips',{ lbl:'trips', prev:r.prevTrips.map(function(x){ return x.trips; }) }) : '<p class="dim">The daily trip count starts with tonight\'s run.</p>')+
-        (r.tripsSince ? '<p class="dim" style="font-size:12px;margin:6px 0 0">Recorded from '+r.tripsSince+'.</p>' : '')+'</div>'+
-      '<div class="panel"><div class="tph"><h4>From lead to driving</h4><span class="dim">in this range</span></div>'+
+        (r.tripsSince ? '<p class="ana-say">'+num(Math.round(N.trips/days))+' a day'+(P.trips?' against '+num(Math.round(P.trips/days))+' the period before':'')+'. Recorded from '+r.tripsSince+'.</p>' : '')+'</div>'+
+    '</div>'+
+    '<div class="dgrid">'+
+      '<div class="panel"><div class="tph"><h4>From lead to driving</h4><span class="dim">how many, and how fast</span></div>'+
         [['New leads',N.leads,'#2563eb'],['Onboarded',N.onboarded,'#d97706'],['Activated',N.activated,'#059669']].map(function(x,i,a){
           const w=Math.max(4, Math.round(x[1]/Math.max(1,a[0][1])*100));
           return '<div class="fun"><div class="fl"><span>'+x[0]+'</span><b>'+num(x[1])+'</b>'+(i?'<em>'+pct2(x[1],a[i-1][1])+' of the step before</em>':'')+'</div>'+
             '<div class="fb"><i style="width:'+w+'%;background:'+x[2]+'"></i></div></div>'; }).join('')+
-        '<div class="fun"><div class="fl"><span>Churned / back</span><b>'+num(N.churned)+' / '+num(N.back)+'</b><em>'+(N.churned?pct2(N.back,N.churned)+' came back':'')+'</em></div></div>'+
+        '<div class="speed"><div><b>'+(r.speed.leadToOnb===null?'—':r.speed.leadToOnb.toFixed(1).replace(/\.0$/,''))+'</b><span>days, sign-up to onboarding (median)</span></div>'+
+          '<div><b>'+(r.speed.onbToAct===null?'—':r.speed.onbToAct.toFixed(1).replace(/\.0$/,''))+'</b><span>days, onboarding to 5 trips (median)</span></div></div>'+
       '</div>'+
+      '<div class="panel"><div class="tph"><h4>Open leads, by how long they have waited</h4><span class="dim">'+num(BK.total||0)+' open · '+num(BK.never||0)+' never called</span></div>'+
+        [['0–3 days',BK.a0],['4–7 days',BK.a1],['8–14 days',BK.a2],['15–30 days',BK.a3],['over 30 days',BK.a4]].map(function(x,i){
+          return '<div class="fun"><div class="fl"><span>'+x[0]+'</span><b>'+num(x[1]||0)+'</b></div><div class="fb"><i style="width:'+Math.max(1,Math.round((x[1]||0)/ageMax*100))+'%;background:'+['#22c55e','#84cc16','#eab308','#f97316','#dc2626'][i]+'"></i></div></div>'; }).join('')+
+        '<p class="ana-say">'+(BK.a3+BK.a4 ? '<b>'+num((BK.a3||0)+(BK.a4||0))+'</b> have waited over two weeks — the longer a lead waits, the less likely it is to drive.' : 'No lead has waited over two weeks.')+'</p></div>'+
     '</div>'+
-    '<div class="panel"><div class="tph"><h4>Calls a day</h4><span class="dim"><i class="key k1"></i> answered <i class="key k2"></i> no answer <i class="key kl"></i> onboarded</span></div>'+
-      anaBars(r.series,'answered',{ lbl:'answered', stack:'na', stackLbl:'not answered', line:'onboarded', lineLbl:'onboarded' })+'</div>'+
+    '<div class="dgrid">'+
+      anaCompare('Does calling a new lead work?', 'Called', L.called_onb||0, L.called||0, 'Never called', L.notcalled_onb||0, (L.leads||0)-(L.called||0), 'onboard')+
+      anaCompare('Does calling a churned driver bring him back?', 'Called after he stopped', Ch.called_back||0, Ch.called||0, 'Not called', Ch.notcalled_back||0, (Ch.churned||0)-(Ch.called||0), 'come back')+
+    '</div>'+
+    '<div class="dgrid">'+
+      '<div class="panel"><div class="tph"><h4>Do activated drivers stay?</h4><span class="dim">drivers activated each month, and where they are now</span></div>'+
+        ((r.cohorts||[]).length ? '<table class="atable"><thead><tr><th>Activated in</th><th class="num">Drivers</th><th class="num">Still working</th><th class="num">Churned</th></tr></thead><tbody>'+
+          r.cohorts.map(function(c){ return '<tr><td>'+c.m+'</td><td class="num">'+num(c.activated)+'</td><td class="num"><b>'+pct2(c.working,c.activated)+'</b></td><td class="num">'+pct2(c.churned,c.activated)+'</td></tr>'; }).join('')+
+          '</tbody></table>' : '<p class="dim">No activations in the last four months.</p>')+'</div>'+
+      '<div class="panel"><div class="tph"><h4>Who carries the trips?</h4><span class="dim">this cycle, working drivers</span></div>'+
+        (CC.drivers ? '<div class="speed"><div><b>'+pct2(CC.top20,CC.trips)+'</b><span>of the trips come from the top 20% of drivers</span></div>'+
+          '<div><b>'+(CC.trips/CC.drivers).toFixed(1)+'</b><span>trips per working driver this cycle</span></div>'+
+          '<div><b>'+num(CC.zero)+'</b><span>working drivers with no trip this cycle yet</span></div></div>'+
+          '<p class="ana-say">'+(CC.top20/CC.trips>0.6 ? 'The trips lean heavily on a few drivers: losing one of them costs a lot — keep calling them.' : 'The trips are spread across the book.')+'</p>'
+        : '<p class="dim">No working drivers with a count for this cycle yet.</p>')+'</div>'+
+    '</div>'+
     '<div class="panel"><div class="tph"><h4>The agents side by side</h4><span class="dim">click a column to sort · a name for just that agent</span></div>'+
       '<div style="overflow-x:auto"><table class="atable"><thead><tr><th>Agent</th>'+th('book','Book')+th('working','Working')+th('onboarded','Onboarded')+th('activated','Activated')+
-        th('churned','Churned')+th('back','Back')+th('calls','Calls')+'<th class="num">Answered</th>'+th('trips','Trips')+'<th class="num">At risk called</th></tr></thead><tbody>'+
+        th('churned','Churned')+th('back','Back')+th('calls','Calls')+'<th class="num">Answered</th><th class="num">Calls per onboarding</th>'+th('trips','Trips')+'<th class="num">At risk called</th></tr></thead><tbody>'+
       ag.map(function(a){ return '<tr onclick="ANA.agent=\''+esc(a.agent)+'\';drawAnalytics()"><td><b>'+esc(a.agent)+'</b></td>'+
         bar(a,'book')+bar(a,'working')+bar(a,'onboarded')+bar(a,'activated')+bar(a,'churned')+bar(a,'back')+bar(a,'calls')+
-        '<td class="num">'+pct2(a.answered,a.calls)+'</td>'+bar(a,'trips')+
+        '<td class="num">'+pct2(a.answered,a.calls)+'</td><td class="num">'+(a.onboarded?Math.round(a.calls/a.onboarded):'—')+'</td>'+bar(a,'trips')+
         '<td class="num">'+(a.atRisk ? '<span class="'+(a.atRiskCalled<a.atRisk?'dld':'dlu')+'">'+a.atRiskCalled+' of '+a.atRisk+'</span>' : '<span class="dim">—</span>')+'</td></tr>'; }).join('')+
       '</tbody></table></div></div>'+
     '<div class="dgrid">'+
       '<div class="panel"><div class="tph"><h4>At risk: were they called?</h4><span class="dim">idle 3–5 days now · called since they went at risk</span></div>'+
-        (r.riskList.length ? '<div class="cl-list">'+r.riskList.slice(0,12).map(function(x){
+        (r.riskList.length ? '<div class="cl-list">'+r.riskList.slice(0,10).map(function(x){
           const done = x.called && x.called >= new Date(new Date(r.today+'T12:00:00').getTime() - (x.idle-3)*864e5).toISOString().slice(0,10);
           return '<div class="cl-row" onclick="openDriver(\''+x.phone+'\')"><div class="cl-who"><b>'+esc(x.name||'Unnamed')+'</b><span>'+x.phone+' · '+esc(x.agent||'nobody')+'</span></div>'+
             '<span class="cl-tag '+(done?'green':'red')+'">'+(done?'Called':'Not called')+'</span>'+
             '<div class="cl-num"><b>'+x.idle+'</b><span>days idle</span></div></div>'; }).join('')+'</div>' : '<p class="dim">Nobody at risk right now.</p>')+'</div>'+
       '<div class="panel"><div class="tph"><h4>This cycle, at today\'s pace</h4><span class="dim">'+C.from+' → '+C.to+' · day '+C.elapsed+' of '+C.days+'</span></div>'+
         '<div class="fgrid">'+fc+'</div>'+
-        '<div id="anaForecast" class="dim" style="font-size:12.5px;margin-top:10px">'+(can('scoreboard')?'Working out the points…':'')+'</div></div>'+
+        '<div id="anaForecast" class="dim" style="font-size:12.5px;margin-top:10px">'+(can('scoreboard')?'Working out the incentives…':'')+'</div></div>'+
     '</div>'+
     (cyKeys.length ? '<div class="panel"><div class="tph"><h4>Closed cycles</h4><span class="dim">points per agent · incentives paid</span></div>'+
       '<div style="overflow-x:auto"><table class="atable"><thead><tr><th>Agent</th>'+cyKeys.map(function(k){ return '<th class="num">'+k.slice(0,7)+'</th>'; }).join('')+'</tr></thead><tbody>'+
@@ -2889,18 +2983,20 @@ function paintAnalytics(r){
         return '<td class="num">'+(c ? '<b>'+Math.round(c.total*10)/10+'</b> <span class="dim">· '+money(c.money)+'</span>' : '<span class="dim">—</span>')+'</td>'; }).join('')+'</tr>'; }).join('')+
       '<tr class="tot"><td>Paid</td>'+cyPaid.map(function(v){ return '<td class="num"><b>'+money(v)+'</b></td>'; }).join('')+'</tr>'+
       '</tbody></table></div></div>' : '');
-  // the projected points: KPI 1 and 2 as they stand, the trips KPIs at today's pace
+  // incentives at this pace, and what each trip costs in incentives
   if(can('scoreboard')) run().withSuccessHandler(function(sb){
     const el=document.getElementById('anaForecast'); if(!el || !sb || !sb.ok) { if(el) el.textContent=''; return; }
     const rows=(sb.rows||[]).filter(function(x){ return !ANA.agent || x.agent===ANA.agent; }).map(function(x){
       const k=function(key){ const z=(x.kpis||[]).find(function(y){ return y.key===key; }); return z?z.points:0; };
       const pts=k('lead')+k('activation')+(k('productivity')+k('reactivation'))*f;
-      return { a:x.agent, now:x.total, pts:pts, pay:anaPay(pts) }; });
+      return { a:x.agent, now:x.total, nowPay:x.money, pts:pts, pay:anaPay(pts) }; });
     if(!rows.length){ el.textContent=''; return; }
+    const payEnd=rows.reduce(function(s,x){ return s+x.pay; },0), tripsEnd=Math.round(so.trips*f);
     el.innerHTML='<table class="atable"><thead><tr><th>Agent</th><th class="num">Points now</th><th class="num">At this pace</th><th class="num">Incentive</th></tr></thead><tbody>'+
       rows.map(function(x){ return '<tr><td>'+esc(x.a)+'</td><td class="num">'+(Math.round(x.now*10)/10)+'</td><td class="num"><b>'+(Math.round(x.pts*10)/10)+'</b></td><td class="num">'+money(x.pay)+'</td></tr>'; }).join('')+
-      '<tr class="tot"><td>Total</td><td></td><td></td><td class="num"><b>'+money(rows.reduce(function(s,x){ return s+x.pay; },0))+'</b></td></tr></tbody></table>'+
-      '<p style="margin:6px 0 0">Trip KPIs grown at today\'s pace; onboarding KPIs as they stand. An estimate, not the payout.</p>';
+      '<tr class="tot"><td>Total</td><td></td><td></td><td class="num"><b>'+money(payEnd)+'</b></td></tr></tbody></table>'+
+      '<p class="ana-say">'+(tripsEnd ? 'About <b>'+money(Math.round(payEnd/tripsEnd*100)/100)+'</b> in incentives per completed trip at this pace. ' : '')+
+      'Trip KPIs grown at today\'s pace; onboarding KPIs as they stand — an estimate, not the payout.</p>';
   }).getScoreboard(SID, 'current');
 }
 let ANA_LAST=null;
@@ -2927,9 +3023,11 @@ function drawCallLists(){
         (tag ? '<span class="cl-tag '+(tagCls[tag]||'')+'">'+esc(tag)+'</span>' : '<span></span>')+
         '<div class="cl-num"><b>'+big+'</b><span>'+bigLbl+'</span></div>'+
       '</div>'; };
-    const sec=function(id, color, title, why, rows, draw, open){
+    const sec=function(id, color, title, why, rows, draw, total){
+      const all = total!==undefined ? total : rows.length;
       return '<div class="cl-sec" id="'+id+'" style="--c:'+color+'">'+
-        '<div class="cl-head"><div><h4>'+title+' <em>'+num(rows.length)+'</em></h4><p>'+why+'</p></div></div>'+
+        '<div class="cl-head"><div><h4>'+title+' <em>'+num(all)+'</em></h4><p>'+why+
+          (all>rows.length ? ' Showing the '+num(rows.length)+' most urgent.' : '')+'</p></div></div>'+
         (rows.length ? '<div class="cl-list">'+rows.map(function(r,i){ const h=draw(r);
                          return i<6 ? h : h.replace('class="cl-row"','class="cl-row cl-more"'); }).join('')+
                          (rows.length>6 ? '<div class="cl-all" onclick="this.closest(\'.cl-sec\').classList.toggle(\'all\')">'+
@@ -2944,21 +3042,21 @@ function drawCallLists(){
     })();
     const lists=[
       ['cl-leads','#2563eb','New leads to call','KPI 1 — nobody has moved these into onboarding yet. Longest waiting first.', k.leadAction||[],
-        function(r){ return row(r, r.age===null?'—':num(r.age), 'days waiting', r.action, 'lead since '+r.since); }],
+        function(r){ return row(r, r.age===null?'—':num(r.age), 'days waiting', r.action, 'lead since '+r.since); }, (k.actionTotals||{}).lead],
       ['cl-onb','#d97706','Onboarding windows open','KPI 2 — five completed trips within seven days of onboarding. Closest to expiry first.', k.onboardingAction||[],
-        function(r){ return row(r, r.daysLeft+(r.daysLeft===1?' day':' days'), r.remaining+' trips to go ('+r.trips+'/'+r.target+')', r.status, 'onboarded '+r.since); }],
+        function(r){ return row(r, r.daysLeft+(r.daysLeft===1?' day':' days'), r.remaining+' trips to go ('+r.trips+'/'+r.target+')', r.status, 'onboarded '+r.since); }, (k.actionTotals||{}).onboarding],
       ['cl-prod','#059669','Working drivers to push','KPI 3 — every trip they make counts toward the book\'s '+num(k.kpis[2].goal||90)+'. Fewest trips first.', k.productivityAction||[],
-        function(r){ return row(r, num(r.trips), 'trips this cycle', r.status, r.idle===null?'':'idle '+r.idle+(r.idle===1?' day':' days')); }],
+        function(r){ return row(r, num(r.trips), 'trips this cycle', r.status, r.idle===null?'':'idle '+r.idle+(r.idle===1?' day':' days')); }, (k.actionTotals||{}).productivity],
       ['cl-react','#7c3aed','Churned drivers to bring back','KPI 4 — one trip back counts toward the book\'s '+num(k.kpis[3].goal||60)+'. Not back yet first.', k.reactivationAction||[],
-        function(r){ return row(r, num(r.trips), 'trips this cycle', r.status, r.idle===null?'':'idle '+r.idle+(r.idle===1?' day':' days')); }]
+        function(r){ return row(r, num(r.trips), 'trips this cycle', r.status, r.idle===null?'':'idle '+r.idle+(r.idle===1?' day':' days')); }, (k.actionTotals||{}).reactivation]
     ];
     b.innerHTML =
       '<div class="panel"><div class="pfhead"><h4 style="margin:0">'+esc(k.agent)+' — who to call</h4>'+kpiPicker(k,'drawCallLists')+'</div>'+
         '<div class="cl-sum">'+lists.map(function(l){
-          return '<div class="cl-chip" style="--c:'+l[1]+'" onclick="jumpTo(\''+l[0]+'\')"><b>'+num(l[4].length)+'</b><span>'+l[2]+'</span></div>'; }).join('')+
+          return '<div class="cl-chip" style="--c:'+l[1]+'" onclick="jumpTo(\''+l[0]+'\')"><b>'+num(l[6]!==undefined?l[6]:l[4].length)+'</b><span>'+l[2]+'</span></div>'; }).join('')+
           (top.length ? '<div class="cl-chip" style="--c:#0891b2" onclick="jumpTo(\'cl-top\')"><b>'+top.length+'</b><span>Drivers carrying the book</span></div>' : '')+
         '</div></div>'+
-      lists.map(function(l){ return sec(l[0], l[1], l[2], l[3], l[4], l[5]); }).join('')+
+      lists.map(function(l){ return sec(l[0], l[1], l[2], l[3], l[4], l[5], l[6]); }).join('')+
       (top.length ? sec('cl-top','#0891b2','Drivers carrying the book','Most trips in the last 7 days — worth a thank-you call to keep them.', top,
          function(r){ return row(r, num(r.lw), (r.lwd||7)>=7?'trips, last 7 days':'trips, last '+r.lwd+' days', '', num(r.total)+' trips in all'); }) : '')+
       ((k.onboardedList||[]).length ?
