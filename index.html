@@ -201,6 +201,7 @@
   .ktn b{font-size:30px;letter-spacing:-.5px;} .ktall{text-align:right;} .ktall b{display:block;font-size:18px;} .ktall span{font-size:12px;}
   @media(max-width:900px){ .khero{grid-template-columns:1fr;justify-items:center;text-align:center;} .kpair{grid-template-columns:1fr;} }
   .called{display:inline-flex;vertical-align:-2px;color:#16a34a;margin-left:4px;}
+  .bars .bv{font-size:10px;fill:var(--dim);font-weight:600;}
   .awpill{display:inline-block;padding:5px 11px;border-radius:14px;background:var(--line2,#eef0f4);font-size:13px;}
   .awpill.ok{background:#dcfce7;color:#15803d;}
   /* to-do list */
@@ -2192,8 +2193,9 @@ function drawDashboard(){
         '<div class="panel"><div class="tph"><h4>Where the drivers are</h4>'+
           '<span class="dim">'+num(total)+'</span></div>'+ring+'</div>'+
       '</div>'+
-      '<div class="dgrid">'+
-        doNow+
+      // "Do these now" is the agent's own to-do: managers and the owner don't get it (19 Oct)
+      '<div class="'+(isMgr()?'':'dgrid')+'">'+
+        (isMgr() ? '' : doNow)+
         '<div class="panel" id="dKpi"><div class="tph"><h4>KPI progress</h4>'+
           '<span class="lnk" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')">Details</span></div>'+
           '<div class="dim">Working it out…</div></div>'+
@@ -2307,9 +2309,10 @@ function weekCell(t){
 
 /* ---------- small charts, drawn as SVG ---------- */
 function barChart(days){
-  const W=560, H=170, pad=22, bw=(W-pad)/days.length;
   const max=Math.max(4, days.reduce(function(m,d){ return Math.max(m,d.calls); },0));
-  const y=function(v){ return H-24-(v/max)*(H-40); };
+  // the side numbers get the room they need (429 was cut to "29"), and each day says its total
+  const pad=12+String(max).length*8, W=560, H=180, bw=(W-pad)/days.length;
+  const y=function(v){ return H-24-(v/max)*(H-50); };
   let g='';
   [0, Math.round(max/2), max].forEach(function(v){
     g+='<line x1="'+pad+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'" class="gl"/>'+
@@ -2320,6 +2323,7 @@ function barChart(days){
     g+='<rect x="'+x+'" y="'+yc+'" width="'+w+'" height="'+Math.max(0,ya-yc)+'" rx="3" class="bn"/>';
     g+='<rect x="'+x+'" y="'+ya+'" width="'+w+'" height="'+Math.max(0,(H-24)-ya)+'" rx="3" class="ba'+(today?' today':'')+'">'+
        '<title>'+d.d+': '+d.calls+' calls, '+d.answered+' answered</title></rect>';
+    if(d.calls) g+='<text x="'+(x+w/2)+'" y="'+(yc-4)+'" class="ax bv" text-anchor="middle">'+num(d.calls)+'</text>';
     if(i%2===days.length%2 || today)
       g+='<text x="'+(x+w/2)+'" y="'+(H-8)+'" class="ax'+(today?' tdy':'')+'" text-anchor="middle">'+
          (today?'Today':Number(d.d.slice(8)))+'</text>';
