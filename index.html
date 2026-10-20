@@ -171,6 +171,36 @@
   .aq{display:flex;flex-direction:column;gap:6px;}
   .aq label{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .aq input{width:90px;text-align:right;}
+  /* KPI page */
+  .ring .rbg{stroke:var(--line2,#eef0f4);} .ring .rfg{stroke:var(--blue,#3b6ee0);transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1);}
+  .ring.ok .rfg{stroke:#16a34a;} .ring.big .rfg{stroke:#5b21b6;} .ring.cyc .rfg{stroke:#06b6d4;}
+  .khero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:26px;align-items:center;margin-top:14px;}
+  .kgauge,.kcycle{position:relative;}
+  .kgv,.kcv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .kcycle .kcv{height:92px;}
+  .kgv b{font-size:34px;letter-spacing:-1px;} .kgv span,.kcv span{font-size:11.5px;color:var(--dim);} .kcv b{font-size:22px;}
+  .km1{font-size:30px;font-weight:700;letter-spacing:-.5px;} .knext{margin:8px 0 10px;font-size:13.5px;}
+  .ladder{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .lstep{flex:1;min-width:64px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center;opacity:.65;}
+  .lstep .lp{display:block;font-weight:700;font-size:14px;} .lstep .lm{display:block;font-size:11px;color:var(--dim);}
+  .lstep.got{background:#ede9fe;border-color:#c4b5fd;opacity:1;} .lstep.next{border:2px solid #5b21b6;opacity:1;}
+  html[data-theme="dark"] .lstep.got{background:#2e1065;border-color:#5b21b6;}
+  .kgrid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px;margin-bottom:15px;}
+  .kcard2{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .kcard2:hover{transform:translateY(-2px);box-shadow:0 8px 22px var(--shadow,rgba(0,0,0,.08));}
+  .kcard2.hit{border-color:#86efac;} .kcard2.waiting{opacity:.7;}
+  .kc2top{display:flex;gap:12px;align-items:center;} .kcard2 .nm{font-size:12.5px;color:var(--dim);} .kcard2 .rt{font-size:24px;font-weight:700;}
+  .kcard2 .tg{font-size:12px;color:var(--dim);font-weight:400;}
+  .kc2row{display:flex;justify-content:space-between;margin:12px 0 6px;font-size:13px;}
+  .kbar{height:6px;border-radius:4px;background:var(--line2,#eef0f4);overflow:hidden;}
+  .kbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .9s cubic-bezier(.2,.8,.2,1);}
+  .kc2tip{margin-top:8px;font-size:12.5px;color:var(--dim);}
+  .kpair{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start;}
+  .kguide .gstep{margin:6px 0 4px;font-size:13.5px;} .kguide .gways{margin:4px 0 10px 18px;padding:0;font-size:13.5px;line-height:1.7;}
+  .ktrips{display:flex;justify-content:space-between;align-items:center;gap:14px;}
+  .ktn b{font-size:30px;letter-spacing:-.5px;} .ktall{text-align:right;} .ktall b{display:block;font-size:18px;} .ktall span{font-size:12px;}
+  @media(max-width:900px){ .khero{grid-template-columns:1fr;justify-items:center;text-align:center;} .kpair{grid-template-columns:1fr;} }
+  .called{display:inline-flex;vertical-align:-2px;color:#16a34a;margin-left:4px;}
   .awpill{display:inline-block;padding:5px 11px;border-radius:14px;background:var(--line2,#eef0f4);font-size:13px;}
   .awpill.ok{background:#dcfce7;color:#15803d;}
   /* to-do list */
@@ -479,7 +509,7 @@
   .dtile .dv{font-size:28px;font-weight:650;letter-spacing:-.8px;margin:4px 0 2px;
              font-variant-numeric:tabular-nums;white-space:nowrap;}
   .dtile .dv .u{font-size:13px;font-weight:500;color:var(--dim);margin-right:3px;letter-spacing:0;}
-  .dtile .ds{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dtile .ds{font-size:12px;color:var(--dim);line-height:1.35;}   /* the whole line, wrapped — never cut off */
   .dtile.good .dv{color:#17683a;}  .dtile.bad .dv{color:var(--alert);}  .dtile.warn .dv{color:#b45309;}
   .dtile.score{background:linear-gradient(135deg,#5000bc,#3b2fd0);border:0;color:#fff;}
   .dtile.score .dl,.dtile.score .ds,.dtile.score .dv .u{color:rgba(255,255,255,.78);}
@@ -956,7 +986,7 @@
     </div>
 
     <div class="grp">Overview</div>
-    <a class="on" data-v="today">Today</a>
+    <a class="on" data-v="today">Dashboard</a>
     <a data-v="pipeline">All Drivers</a>
 
     <div class="grp">Follow-ups</div>
@@ -969,6 +999,7 @@
     <a data-v="activation" title="Onboarded, not yet at five trips — KPI 2 counts five inside seven days">Onboarding <em id="n-activation"></em></a>
     <a data-v="atRisk" title="KPI 3 — keep them driving">At risk <em id="n-atRisk"></em></a>
     <a data-v="churned" title="Churned, last trip within 30 days — KPI 4: bring them back">Recently churned <em id="n-churn"></em></a>
+    <a data-v="calls" title="The drivers behind each KPI, most urgent first">Call lists</a>
 
     <div class="grp">Performance</div>
     <a data-v="kpi">My KPIs</a>
@@ -1916,7 +1947,7 @@ function refresh(){
     VIEW='today';
     document.querySelectorAll('.nav a').forEach(function(x){
       x.classList.toggle('on', x.dataset.v==='today'); });
-    document.getElementById('title').textContent='Today';
+    document.getElementById('title').textContent='Dashboard';
   }
   if(VIEW==='today'){
     showChrome(false);
@@ -1935,6 +1966,7 @@ function refresh(){
   if(VIEW==='export'){ showChrome(false); return drawExport(); }
   if(VIEW==='sync'){ showChrome(false); return drawSync(); }
   if(VIEW==='kpi'){ showChrome(false); return drawKpi(); }
+  if(VIEW==='calls'){ showChrome(false); return drawCallLists(); }
   showChrome(true);
   loadList();
 }
@@ -2117,8 +2149,8 @@ function drawDashboard(){
     const tiles='<div class="dtiles">'+
       tile('Drivers', num(total), who ? esc(who)+'\'s book' : isMgr() ? 'in the whole book' : 'in your book', '', "go('pipeline')")+
       tile('Driving', num(live), (total ? Math.round(live/total*100)+'% of the book · ' : '')+'drove in the last 5 days', 'good', "goStage('Active')")+
-      '<div class="dtile" id="dTrips"><div class="dl">Completed trips</div><div class="dv">…</div><div class="ds">this cycle</div></div>'+
-      tile('Calls today', num(calledToday), '<span id="dCallsVs">&nbsp;</span>', '', '')+
+      '<div class="dtile" id="dTrips" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')"><div class="dl">Completed trips</div><div class="dv">…</div><div class="ds">this cycle</div></div>'+
+      tile('Calls today', num(calledToday), '<span id="dCallsVs">&nbsp;</span>', '', "jumpTo('"+(isMgr() && !who ? 'dTeam' : 'agentWork')+"')")+
       tile('Overdue', num(overdue), overdue ? 'follow-ups past their date' : 'nothing late', overdue?'bad':'', "go('overdue')")+
       tile('At risk', num(atRisk), 'idle 3 to 5 days', atRisk?'warn':'', "go('atRisk')")+
       (isMgr() && !who
@@ -2166,8 +2198,9 @@ function drawDashboard(){
           '<span class="lnk" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')">Details</span></div>'+
           '<div class="dim">Working it out…</div></div>'+
       '</div>'+
-      (isMgr() && !who ? '<div class="panel" id="dTeam"><div class="tph"><h4>The team this week</h4>'+
-          '<span class="dim">Click an agent to see their dashboard</span></div>'+teamTable(todayStr, t0)+'</div>' : '');
+      (isMgr() && !who ? '<div class="panel" id="dTeam"><div class="tph"><h4>The team</h4>'+
+          '<span class="dim">This week\'s calls, this cycle\'s trips and score · click an agent for their dashboard</span></div>'+teamTable(todayStr, t0)+'</div>'
+        : '<div class="dgrid"><div id="dGuide"></div><div id="agentWork"></div></div>');
 
     /* ---------- the pieces that come from the server ---------- */
     run().withSuccessHandler(function(r){
@@ -2184,12 +2217,17 @@ function drawDashboard(){
       Object.keys(r.team||{}).forEach(function(a){
         const c=document.getElementById('tw-'+cls(a)); if(c) c.innerHTML=weekCell(r.team[a]);
       });
+      if(r.trips && r.trips.byAgent) Object.keys(r.trips.byAgent).forEach(function(a){
+        const c=document.getElementById('tt-'+cls(a)); if(c) c.innerHTML='<b>'+num(r.trips.byAgent[a])+'</b>'; });
       const tt=document.getElementById('dTrips');
       if(tt && r.trips){
         tt.querySelector('.dv').textContent=num(r.trips.cycle);
-        tt.querySelector('.ds').textContent='this cycle (since '+r.trips.from.slice(5)+') · '+num(r.trips.total)+' all time';
+        const f=new Date(r.trips.from+'T12:00:00');
+        tt.querySelector('.ds').textContent='this cycle, since '+f.getDate()+' '+f.toLocaleDateString('en-GB',{month:'short'})+
+          ' · '+num(r.trips.total)+' all time';
       }
     }).getDashStats(SID, who);
+    if(!(isMgr() && !who)) drawAgentWork(who || ME.name, true);     // their calls this cycle, folded
 
     const fillScore=function(k){
       if(!k || !k.ok) return;
@@ -2197,6 +2235,7 @@ function drawDashboard(){
       if(tileEl){ tileEl.querySelector('.dv').innerHTML=money(k.money);
         tileEl.querySelector('.ds').textContent=k.total.toFixed(1).replace(/\.0$/,'')+' points'+
           (k.next ? ' · '+Math.max(0,k.next.points-k.total).toFixed(1).replace(/\.0$/,'')+' to '+egp(k.next.money) : ''); }
+      const g=document.getElementById('dGuide'); if(g) g.innerHTML=kpiGuide(k, who);
       const kp=document.getElementById('dKpi'); if(!kp) return;
       const len=Number(k.cycle.monthDays)||30;      // the cycle's own length (it can run 26th to 25th)
       const elapsed=Math.max(0, len-k.cycle.daysLeft);
@@ -2217,6 +2256,9 @@ function drawDashboard(){
         el.querySelector('.dv').innerHTML=money(r.totalMoney);
         const paid=r.rows.filter(function(x){ return x.money>0; }).length;
         el.querySelector('.ds').textContent=r.rows.length+' agent'+(r.rows.length===1?'':'s')+' · '+paid+' earning so far';
+        r.rows.forEach(function(x){                                   // the team table's score column
+          const c=document.getElementById('ts-'+cls(x.agent));
+          if(c) c.innerHTML='<b>'+Number(x.total).toFixed(1).replace(/\.0$/,'')+'</b> <span class="dim">pts</span> · '+money(x.money); });
       };
       const sk='sb:current', sh=MEMO[sk];
       if(sh && Date.now()-sh.at < MEMO_MS) fillTeam(sh.data);
@@ -2244,16 +2286,18 @@ function teamTable(todayStr, t0){
   const max=Math.max(1, names.reduce(function(m,n){ return Math.max(m, by[n].n); },0));
   const c=function(v,warn){ return '<td class="num'+(v&&warn?' warn':'')+'">'+(v?num(v):'<span class="dim">0</span>')+'</td>'; };
   return '<div style="overflow-x:auto"><table class="ttable"><thead><tr><th>Agent</th><th>Book</th>'+
-      '<th>Calls this week</th><th class="num">Overdue</th><th class="num">At risk</th>'+
+      '<th>Calls this week</th><th class="num">Trips this cycle</th><th>Score</th><th class="num">Overdue</th><th class="num">At risk</th>'+
       '<th class="num">Untouched leads</th></tr></thead><tbody>'+
     names.map(function(n){ const r=by[n];
       return '<tr onclick="todayFor(\''+esc(n).replace(/'/g,"\\'")+'\')"><td><b>'+esc(n)+'</b></td>'+
         '<td><div class="hbar"><i style="width:'+(r.n/max*100)+'%"></i><span>'+num(r.n)+
           ' · '+num(r.live)+' driving</span></div></td>'+
         '<td id="tw-'+cls(n)+'">'+weekCell({calls:0,answered:0})+'</td>'+
+        '<td class="num" id="tt-'+cls(n)+'"><span class="dim">…</span></td>'+
+        '<td id="ts-'+cls(n)+'"><span class="dim">…</span></td>'+
         c(r.over,1)+c(r.risk,1)+c(r.leads)+'</tr>'; }).join('')+
     (by[''] ? '<tr class="off" onclick="go(\'unassigned\')"><td>Not assigned yet</td><td>'+num(by[''].n)+
-      '</td><td colspan="4" class="dim">'+num(by[''].leads)+' new leads waiting — <span class="lnk">assign them</span></td></tr>' : '')+
+      '</td><td colspan="6" class="dim">'+num(by[''].leads)+' new leads waiting — <span class="lnk">assign them</span></td></tr>' : '')+
     '</tbody></table></div>';
 }
 function weekCell(t){
@@ -2506,42 +2550,135 @@ function topPerformers(){
       '</div>'; }).join('')+'</div></div>';
 }
 
+/* ---------- KPIs: the numbers, shown so they mean something at a glance ----------
+   A points gauge and the pay ladder, a ring per KPI with what it takes to hit its target,
+   the book's trips, and a short guide: the cheapest way to the next pay step. The lists of
+   drivers to work on are on their own page (Call lists). */
+const KPI_UNIT = { lead:'onboardings', activation:'activations (5 trips in 7 days)',
+                   productivity:'drivers reaching their trip target', reactivation:'churned drivers back to target' };
+function kpiPicker(k, redraw){
+  return k.isManager
+    ? '<select onchange="KPI_WHO=this.value;'+redraw+'()">'+
+        '<option value=""'+(KPI_WHO?'':' selected')+'>Everyone</option>'+
+        k.team.map(function(a){ return '<option'+(a===KPI_WHO?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+
+      '</select>' : '';
+}
+function ringSvg(frac, size, stroke, cls){
+  const r=(size-stroke)/2, c=2*Math.PI*r, f=Math.max(0, Math.min(1, frac||0));
+  return '<svg class="ring '+(cls||'')+'" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+
+    '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="rbg" stroke-width="'+stroke+'" fill="none"/>'+
+    '<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="rfg" stroke-width="'+stroke+'" fill="none" stroke-linecap="round" '+
+      'stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+c.toFixed(1)+'" data-to="'+(c*(1-f)).toFixed(1)+'" '+
+      'transform="rotate(-90 '+size/2+' '+size/2+')"/></svg>';
+}
+/* numbers count up and rings fill once the page is on screen */
+function animateKpi(){
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    document.querySelectorAll('#body .rfg[data-to]').forEach(function(c){ c.style.strokeDashoffset=c.dataset.to; });
+    document.querySelectorAll('#body .kbar i[data-w]').forEach(function(x){ x.style.width=x.dataset.w; });
+    document.querySelectorAll('#body [data-count]').forEach(function(el){
+      const to=Number(el.dataset.count), dec=Number(el.dataset.dec||0), t0=performance.now(), dur=700;
+      const step=function(t){ const q=Math.min(1,(t-t0)/dur), v=to*(1-Math.pow(1-q,3));
+        el.textContent=v.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+        if(q<1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+  }); });
+}
+/* the cheapest way to the next pay step, from what one more success is worth in each KPI */
+function kpiGuide(k, who){
+  const lines=[];
+  if(k.next){
+    const need=Math.max(0, k.next.points-k.total);
+    const ways=k.kpis.filter(function(x){ return x.perWin>0; })
+      .map(function(x){ return { x:x, n:Math.ceil(need/x.perWin - 1e-9) }; })
+      .sort(function(a,b){ return a.n-b.n; }).slice(0,3);
+    if(ways.length) lines.push('<div class="gstep"><b>'+need.toFixed(1).replace(/\.0$/,'')+' points</b> to reach <b>'+
+      money(k.next.money)+'</b> (at '+k.next.points+' points). Any one of these gets there on its own:</div>'+
+      '<ul class="gways">'+ways.map(function(w){ return '<li><b>'+num(w.n)+'</b> more '+KPI_UNIT[w.x.key]+
+        ' <span class="dim">(+'+w.x.perWin.toFixed(2).replace(/0$/,'').replace(/\.0$/,'')+' each)</span></li>'; }).join('')+'</ul>');
+  }
+  const below=k.kpis.filter(function(x){ return x.pool && x.rate < x.target && x.toTarget>0; });
+  if(below.length) lines.push('<div class="gstep">To hit each target this cycle:</div><ul class="gways">'+
+    below.map(function(x){ return '<li><b>'+x.name+'</b>: '+num(x.toTarget)+' more '+KPI_UNIT[x.key]+
+      ' <span class="dim">('+num(x.won)+' of '+num(x.pool)+' now)</span></li>'; }).join('')+'</ul>');
+  const waiting=k.kpis.filter(function(x){ return !x.pool; });
+  if(waiting.length) lines.push('<div class="dim" style="font-size:12.5px">Not counting yet: '+waiting.map(function(x){ return x.name; }).join(', ')+
+    ' — nobody in '+(waiting.length===1?'it':'them')+' this cycle.</div>');
+  if(!lines.length) lines.push('<div class="gstep">Every target is met — keep the book driving.</div>');
+  return '<div class="panel kguide"><h4>'+(who ? esc(who)+'\'s next step' : 'Your next step')+'</h4>'+lines.join('')+
+    '<p class="dim" style="font-size:12px;margin:10px 0 0">An estimate on today\'s numbers: a pool can still grow. '+
+    '<span class="lnk" onclick="go(\'calls\')">See who to call</span></p></div>';
+}
 function drawKpi(){
   const b=document.getElementById('body');
   loadBook(function(){});
   memo('kpi:'+KPI_WHO,
     function(done){ run().withSuccessHandler(done).getKpi(SID, KPI_WHO); },
     function(k){
-    if(!k){ b.innerHTML='<div class="empty"><h3>No answer from the server</h3>'+
-      '<p>Run <b>Check the system</b> from the Supply CRM menu in the sheet.</p></div>'; return; }
+    if(!k){ b.innerHTML='<div class="empty"><h3>No answer from the server</h3></div>'; return; }
     if(!k.ok){ b.innerHTML='<div class="empty">'+(k.msg||'Not available')+'</div>'; return; }
+    const one = !!KPI_WHO || !k.isManager;                         // one agent (not the whole team)
+    const top = 100, frac = Math.min(1, k.total/top);
+    const len = k.cycle.monthDays||30, left = k.cycle.daysLeft||0;
 
-    const picker = k.isManager
-      ? '<select onchange="KPI_WHO=this.value;drawKpi()">'+
-          '<option value=""'+(KPI_WHO?'':' selected')+'>Everyone</option>'+
-          k.team.map(function(a){
-            return '<option'+(a===KPI_WHO?' selected':'')+'>'+a+'</option>'; }).join('')+
-        '</select>' : '';
+    // the pay ladder: every step, the reached ones filled, the next one marked
+    const steps = ((ME && ME.kpiPayout) || []).slice().reverse().filter(function(p){ return p[1]>0; });
+    const ladder = '<div class="ladder">'+steps.map(function(p){
+        const got = k.total >= p[0], nxt = k.next && k.next.points===p[0];
+        return '<div class="lstep'+(got?' got':'')+(nxt?' next':'')+'"><span class="lp">'+p[0]+'</span>'+
+          '<span class="lm">EGP '+num(p[1])+'</span></div>'; }).join('')+'</div>';
+
+    const hero =
+      '<div class="khero">'+
+        '<div class="kgauge">'+ringSvg(frac, 168, 14, 'big')+
+          '<div class="kgv"><b data-count="'+k.total+'" data-dec="1">0</b><span>of 100 points</span></div></div>'+
+        '<div class="kmoney">'+
+          (one ? '<div class="km1">'+money(k.money)+'</div><div class="dim">'+(k.cycle.closed?'final — cycle closed':'on current form')+'</div>'
+               : '<div class="km1"><span class="lnk" onclick="go(\'team\')">Scoreboard</span></div><div class="dim">incentives are paid per agent</div>')+
+          (one && k.next ? '<div class="knext">'+(k.next.points-k.total).toFixed(1).replace(/\.0$/,'')+' points to <b>'+money(k.next.money)+'</b></div>' : '')+
+          ladder+'</div>'+
+        '<div class="kcycle">'+ringSvg((len-left)/len, 92, 9, 'cyc')+
+          '<div class="kcv"><b>'+left+'</b><span>'+(left===1?'day left':'days left')+'</span></div>'+
+          '<div class="dim" style="font-size:12px;text-align:center;margin-top:6px">'+k.cycle.from.slice(5)+' → '+k.cycle.to.slice(5)+'</div></div>'+
+      '</div>';
 
     const cards = k.kpis.map(function(x){
-      const empty = !x.pool;
-      const hit = !empty && x.rate >= x.target;
-      const fill = Math.min(100, x.target ? (x.rate/x.target*100) : 0);
-      return '<div class="kcard'+(hit?' hit':'')+(empty?' waiting':'')+'">'+
-        '<div class="nm">'+x.name+'</div>'+
-        // a KPI with nobody in it yet is not a failure, and should not read as one
-        '<div class="rt">'+(empty ? '—' : pct(x.rate))+'</div>'+
-        '<div class="tg">'+(empty
-            ? 'nobody eligible yet, target '+pct(x.target)
-            : num(x.won)+' of '+num(x.pool)+', target '+pct(x.target))+'</div>'+
-        '<div class="meter"><i style="width:'+fill+'%"></i>'+
-          '<span class="goal" style="left:100%"></span></div>'+
-        '<div class="pt"><span>points'+
-            (x.points > x.max ? ' <span class="over">+'+
-              (x.points - x.max).toFixed(1).replace(/\.0$/,'')+' above target</span>' : '')+
-          '</span><b>'+x.points.toFixed(1).replace(/\.0$/,'')+' / '+x.max+'</b></div>'+
+      const empty=!x.pool, hit=!empty && x.rate>=x.target;
+      return '<div class="kcard2'+(hit?' hit':'')+(empty?' waiting':'')+'" onclick="go(\'calls\')" title="Who to call for this">'+
+        '<div class="kc2top">'+ringSvg(empty?0:Math.min(1,x.rate/x.target), 64, 7, hit?'ok':'')+
+          '<div><div class="nm">'+x.name+'</div><div class="rt">'+(empty?'—':pct(x.rate))+
+          ' <span class="tg">/ '+pct(x.target)+'</span></div></div></div>'+
+        '<div class="kc2row"><span>'+(empty?'nobody in it yet':num(x.won)+' of '+num(x.pool))+'</span>'+
+          '<b>'+x.points.toFixed(1).replace(/\.0$/,'')+' <span class="dim">/ '+x.max+' pts</span></b></div>'+
+        '<div class="kbar"><i data-w="'+Math.min(100, x.points/x.max*100)+'%"></i></div>'+
+        '<div class="kc2tip">'+(empty ? 'Counts once someone is in it' :
+          hit ? (x.points>x.max ? '+'+(x.points-x.max).toFixed(1).replace(/\.0$/,'')+' above target' : 'Target met') :
+                num(x.toTarget)+' more '+KPI_UNIT[x.key]+' to the target')+'</div>'+
       '</div>'; }).join('');
 
+    const tripsCard = k.trips ? '<div class="panel ktrips"><div><div class="dim">Completed trips by '+(one?(KPI_WHO?esc(KPI_WHO)+'\'s':'your'):'the team\'s')+' drivers</div>'+
+        '<div class="ktn"><b data-count="'+k.trips.cycle+'">0</b> <span class="dim">this cycle</span></div></div>'+
+        '<div class="ktall"><b>'+num(k.trips.total)+'</b><span class="dim">all time · '+num(k.drivers)+' drivers</span></div></div>' : '';
+
+    b.innerHTML =
+      '<div class="panel"><div class="pfhead"><h4 style="margin:0">'+esc(k.agent)+'</h4>'+kpiPicker(k,'drawKpi')+'</div>'+hero+'</div>'+
+      '<div class="kgrid2">'+cards+'</div>'+
+      '<div class="kpair">'+(one ? kpiGuide(k, KPI_WHO) : '')+tripsCard+'</div>'+
+      (k.unmeasured ? '<div class="note">'+num(k.unmeasured)+' driver'+(k.unmeasured===1?' has':'s have')+
+        ' no starting trip count for this cycle yet, so their trips show as zero. The next sync or tonight\'s run sets it.</div>' : '');
+    animateKpi();
+  });
+}
+
+/* ---------- Call lists: who to work on, KPI by KPI ---------- */
+function drawCallLists(){
+  const b=document.getElementById('body');
+  loadBook(function(){});
+  memo('kpi:'+KPI_WHO,
+    function(done){ run().withSuccessHandler(done).getKpi(SID, KPI_WHO); },
+    function(k){
+    if(!k || !k.ok){ b.innerHTML='<div class="empty">'+((k&&k.msg)||'Not available')+'</div>'; return; }
     const table = function(title, sub, head, rows, cells){
       if(!rows.length) return '<div class="panel"><h4>'+title+'</h4>'+
         '<p class="dim">Nothing waiting here.</p></div>';
@@ -2560,29 +2697,11 @@ function drawKpi(){
       return '<td class="'+(bad.indexOf(v)>-1?'':'dim')+'">'+v+'</td>';
     };
 
+
     b.innerHTML =
-      '<div class="panel"><div class="pfhead">'+
-        '<h4 style="margin:0">'+k.agent+'</h4>'+picker+'</div>'+
-        '<div class="stats">'+
-          stat(k.total.toFixed(1).replace(/\.0$/,''), k.total > 100 ? 'points — above 100' : 'of 100 points')+
-          (KPI_WHO ? stat(money(k.money), k.cycle.closed?'final, cycle closed':'on current form')+
-                     (k.next ? stat(money(k.next.money), 'at '+k.next.points+' points', 'quiet') : '')
-                   : stat('<span class="lnk" onclick="go(\'team\')">Scoreboard</span>', 'incentives are paid per agent', 'quiet'))+
-          stat(k.cycle.daysLeft, k.cycle.daysLeft===1?'day left':'days left')+
-        '</div>'+
-        '<p class="dim" style="margin:14px 0 0">Cycle '+k.cycle.from+' to '+k.cycle.to+
-          ', Cairo time. Targets are prorated over the cycle\'s '+k.cycle.monthDays+' days.</p>'+
-        (k.unmeasured ? '<div class="note" style="margin:13px 0 0">'+
-          k.unmeasured.toLocaleString()+' driver'+(k.unmeasured===1?' has':'s have')+
-          ' no starting trip count for this cycle yet, so their trips show as zero. '+
-          'The next sync or tonight\'s run sets it.</div>' : '')+
-      '</div>'+
-
-      '<div class="kgrid" style="margin-bottom:15px">'+cards+'</div>'+
-
+      '<div class="panel"><div class="pfhead"><h4 style="margin:0">'+esc(k.agent)+' — who to call</h4>'+kpiPicker(k,'drawCallLists')+'</div>'+
+        '<p class="dim" style="margin:8px 0 0">The drivers behind each KPI, most urgent first. Open one to call.</p></div>'+
       topPerformers()+
-      (KPI_WHO || !isMgr() ? '<div id="agentWork"></div>' : '')+
-
       table('New leads to call',
             'Nobody has moved these into onboarding yet. Oldest first.',
             [{t:'Driver'},{t:'Lead date'},{t:'Days waiting',n:1},{t:'Action'}],
@@ -2635,22 +2754,21 @@ function drawKpi(){
               '<td class="num"><b>'+r.remaining+'</b></td>'+
               '<td class="num dim">'+r.eligibleDays+'</td>'+
               statusCell(r.status); });
-    drawAgentWork(k.agent);
   });
 }
 
 /* The agent's own page: the drivers he holds (by stage) and the calls he made this cycle. */
-function drawAgentWork(who){
+function drawAgentWork(who, callsOnly){
   const box=document.getElementById('agentWork'); if(!box) return;
   const mine=(BOOK||[]).filter(function(d){ return d.o===who; });
   const by={}; mine.forEach(function(d){ by[d.s]=(by[d.s]||0)+1; });
   const stages=['New Lead','Onboarding','New Active','Active','Churned','Rejected'];
-  box.innerHTML =
+  box.innerHTML = (callsOnly ? '' :
     '<div class="panel"><div class="tph"><h4>'+esc(who)+'\'s drivers · '+num(mine.length)+'</h4>'+
       (isMgr() ? '<span class="lnk" onclick="showAgentDrivers(\''+esc(who)+'\')">Open the list</span>' : '')+'</div>'+
       '<div style="display:flex;gap:10px;flex-wrap:wrap">'+stages.filter(function(st){ return by[st]; }).map(function(st){
         return '<span class="awpill">'+st+' <b>'+num(by[st])+'</b></span>'; }).join('')+
-      (mine.length ? '' : '<span class="dim">None at the moment.</span>')+'</div></div>'+
+      (mine.length ? '' : '<span class="dim">None at the moment.</span>')+'</div></div>')+
     '<div class="panel" id="agentCalls"><h4>Calls this cycle</h4><p class="dim">Loading…</p></div>';
   run().withSuccessHandler(function(r){
     const c=document.getElementById('agentCalls'); if(!c) return;
@@ -3625,7 +3743,7 @@ function card(d){
            'onclick="event.stopPropagation()" href="'+PLATFORM_URL+encodeURIComponent(d.platform_id)+'">#'+
            esc(d.platform_id)+'</a>' : '')+
       '</div>'+
-      '<div class="p">'+d.phone+'</div>'+
+      '<div class="p">'+d.phone+calledTodayMark(d)+'</div>'+
       '<div class="knote'+(tone?' '+tone:'')+'">'+(note ? '<span>'+(bold?'<b>'+bold+'</b>':'')+esc(note)+'</span>' : '')+'</div>'+
       '<div class="f"><span><b>'+rides.toLocaleString()+'</b> '+(rides===1?'trip':'trips')+'</span>'+
         '<span class="'+(warn?'risk':'')+'">'+status+'</span></div>'+
@@ -3633,6 +3751,16 @@ function card(d){
     (owner ? '<div class="qa">'+owner+'</div>' : '')+
   '</div>';
 }
+
+/* An agent's list: a driver already called today carries a small phone, so nobody calls him twice
+   in a day. Gone tomorrow. Managers' lists don't show it. */
+const PHONE_SVG='<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>';
+function calledTodayMark(d){
+  if(!ME || isMgr()) return '';
+  const lc=String(d.last_call_date||'').slice(0,10);
+  return lc && lc===todoKey(todoNow()).slice(0,10) ? ' <span class="called" title="Called today">'+PHONE_SVG+'</span>' : '';
+}
+function jumpTo(id){ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
 
 /* Five trips inside seven days, counted from the onboarding date (day 1). */
 function windowText(onb){
@@ -3690,7 +3818,7 @@ function listHtml(){
     '<th>Last call</th></tr></thead><tbody>'+
     DATA.map(function(d){
       return '<tr onclick="openDriver(\''+d.phone+'\')">'+
-        '<td><b>'+(d.name||'Unnamed')+'</b></td><td>'+d.phone+'</td>'+
+        '<td><b>'+(d.name||'Unnamed')+'</b>'+calledTodayMark(d)+'</td><td>'+d.phone+'</td>'+
         '<td>'+(d.city||'—')+'</td><td>'+swatch(d.stage)+'</td>'+
         '<td class="num">'+(d.total_rides||0)+'</td>'+
         '<td class="num dim">'+(d.days_idle!==''?d.days_idle:'—')+'</td>'+
@@ -3737,7 +3865,7 @@ function openDriverTab(phone, tab){ WANT_TAB=tab; openDriver(phone); }
 
 function backToList(){
   const on=document.querySelector('.nav a.on');
-  document.getElementById('title').textContent = on ? navTitle(on) : 'Today';
+  document.getElementById('title').textContent = on ? navTitle(on) : 'Dashboard';
   DRV=null;
   refresh();
   restoreListPos();
