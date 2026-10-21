@@ -226,6 +226,36 @@
   @media(max-width:700px){ .cl-row{grid-template-columns:minmax(0,1fr) auto;} .cl-row .cl-tag{grid-row:2;justify-self:start;} }
   .permrow{display:flex;gap:10px;align-items:center;padding:7px 2px;font-size:14px;border-top:1px solid var(--line);cursor:pointer;}
   .permrow input{width:17px;height:17px;}
+  /* Analytics, 22 Oct */
+  .an-hero .tph{align-items:flex-start;gap:16px;flex-wrap:wrap;} .an-h{margin:0 0 4px;font-size:21px;font-weight:650;letter-spacing:-.3px;}
+  .an-hero .tph p{margin:0;font-size:13px;max-width:640px;line-height:1.5;}
+  .an-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:14px 0 6px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .an-f{padding:12px 16px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:2px;} .an-f:first-child{border-left:0;}
+  .an-f b{font-size:28px;font-weight:700;letter-spacing:-.6px;} .an-f span{font-size:12.5px;color:var(--dim);}
+  .an-f.in b{color:#16a34a;} .an-f.back b{color:#7c3aed;} .an-f.out b{color:#dc2626;}
+  .an-f.net{background:var(--line2,#f4f5f8);} .an-f.net.neg b{color:#dc2626;} .an-f.net.pos b{color:#16a34a;}
+  .an-d{font-size:11.5px;font-weight:600;} .an-d.good{color:#15803d;} .an-d.bad{color:#b91c1c;} .an-d.same{color:var(--dim);font-weight:500;}
+  .an-chart{height:auto;} .an-legend{font-size:12px;color:var(--dim);margin-top:4px;}
+  .an-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px;}
+  .an-fun{display:grid;grid-template-columns:110px minmax(0,1fr) 56px 40px;gap:10px;align-items:center;font-size:13px;padding:5px 0;}
+  .an-fun b{text-align:right;} .an-fun em{font-style:normal;color:var(--dim);font-size:12px;text-align:right;}
+  .an-fb{height:12px;background:var(--line2,#eef0f4);border-radius:6px;overflow:hidden;} .an-fb i{display:block;height:100%;background:var(--blue);border-radius:6px;}
+  .an-fb.grey i{background:#94a3b8;}
+  .an-say{font-size:13px;margin:10px 0 0;line-height:1.5;}
+  .an-leak{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 4px;border-top:1px solid var(--line);cursor:pointer;}
+  .an-leak:first-of-type{border-top:0;} .an-leak:hover{background:var(--line2,#f6f7f9);}
+  .an-leak b{font-size:22px;font-weight:700;text-align:right;color:#b45309;} .an-leak b.zero{color:var(--dim);}
+  .an-leak span{display:block;font-size:13.5px;} .an-leak em{font-style:normal;font-size:12px;color:var(--dim);}
+  .an-pair{margin:4px 0 14px;} .an-pt{font-size:13px;font-weight:600;margin-bottom:6px;}
+  .an-pr{display:grid;grid-template-columns:80px minmax(0,1fr) 44px 90px;gap:10px;align-items:center;font-size:12.5px;padding:3px 0;}
+  .an-pr b{text-align:right;} .an-pr em{font-style:normal;color:var(--dim);font-size:11.5px;}
+  .an-agents td,.an-agents th{white-space:nowrap;} .an-agents td.hgood{color:#15803d;font-weight:600;} .an-agents td.hbad{color:#b91c1c;font-weight:600;}
+  .an-agents tr.tot td{border-top:2px solid var(--line);font-weight:600;}
+  .an-pace{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:6px;}
+  .an-pace > div > span{display:block;font-size:12px;color:var(--dim);} .an-pace b{display:block;font-size:24px;font-weight:700;margin:2px 0;} .an-pace em{font-style:normal;font-size:12px;color:var(--dim);}
+  @media(max-width:1100px){ .an-cards{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media(max-width:700px){ .an-flow{grid-template-columns:repeat(2,minmax(0,1fr));} .an-f:nth-child(3){border-left:0;} .an-f:nth-child(n+3){border-top:1px solid var(--line);}
+    .an-pace{grid-template-columns:1fr;} .an-fun{grid-template-columns:90px minmax(0,1fr) 48px 36px;} }
   /* Analytics */
   .ana-ctl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;} .ana-ctl select{min-width:150px;} .ana-sub{margin-top:8px;font-size:12.5px;}
   .ana-dates input{padding:6px 8px;} .btn.sm{padding:6px 12px;font-size:13px;}
@@ -617,7 +647,11 @@
   .bars .ax{font-size:10px;fill:var(--dim);font-family:inherit;}
   .bars .ax.tdy{font-weight:700;fill:var(--ink);}
   .bars .ba{fill:var(--blue);} .bars .ba.today{fill:var(--zcyan);}
-  .bars .bn{fill:var(--line);}
+  .bars .bn{fill:var(--line);}  .bars .out{opacity:.35;}
+  .dctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .dctl select,.dctl input{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);}
+  .dctl label{font-size:13px;}
+  .dtile .dl em{font-style:normal;color:var(--blue);font-weight:600;}
   .dlegend{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px;}
   .dlegend .lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:8px;}
   .dlegend .lg.a{background:var(--blue);} .dlegend .lg.n{background:var(--line);}
@@ -2218,6 +2252,34 @@ function go(view){
    come from the book already in the browser; the call history and the
    score arrive from the server and fill their own boxes.
    ====================================================================== */
+/* the dashboard's period (22 Oct): kept per browser; the same list the server knows (dashRange_) */
+let DRANGE=(function(){ try{ return JSON.parse(localStorage.getItem('supplycrm_dash')||'')||{key:'today'}; }catch(e){ return {key:'today'}; } })();
+const DASH_LIST=[['today','Today'],['yesterday','Yesterday'],['7d','Last 7 days'],['30d','Last 30 days'],
+                 ['cycle','This cycle'],['lastcycle','Last cycle'],['custom','Pick dates…']];
+function dashSet(k, from, to){
+  if(k==='custom' && !(from && to)){ const t=ymdLocal(today0()); DRANGE={key:'custom', from:DRANGE.from||t, to:DRANGE.to||t}; }
+  else DRANGE=k==='custom' ? {key:k, from:from, to:to} : {key:k};
+  try{ localStorage.setItem('supplycrm_dash', JSON.stringify(DRANGE)); }catch(e){}
+  drawDashboard();
+}
+function dashCtl(){
+  const t=ymdLocal(today0());
+  return '<div class="dctl"><label class="dim" for="dRange">Showing</label>'+
+    '<select id="dRange" onchange="dashSet(this.value)">'+DASH_LIST.map(function(r){
+      return '<option value="'+r[0]+'"'+(DRANGE.key===r[0]?' selected':'')+'>'+r[1]+'</option>'; }).join('')+'</select>'+
+    (DRANGE.key==='custom' ? '<input type="date" id="dFrom" max="'+t+'" value="'+esc(DRANGE.from||t)+'">'+
+      '<span class="dim">to</span><input type="date" id="dTo" max="'+t+'" value="'+esc(DRANGE.to||t)+'">'+
+      '<button class="btn sm" onclick="dashSet(\'custom\', $(\'dFrom\').value, $(\'dTo\').value)">Show</button>' : '')+
+  '</div>';
+}
+/* "▲ 12 vs yesterday by 13:00", or why there is no comparison */
+function dashVs(n, prev, ok, R, what){
+  if(!ok) return '<span class="dim">no comparison yet</span>';
+  const by=R.key==='today' ? 'yesterday by '+R.clock : R.key==='yesterday' ? 'the day before'
+    : R.running ? 'the same days before' : 'the '+R.days+' days before';
+  if(n===prev) return 'same as '+by+' ('+num(prev)+')';
+  return (n>prev ? '<b class="up">▲ '+num(n-prev)+'</b>' : '<b class="down">▼ '+num(prev-n)+'</b>')+' vs '+by+' ('+num(prev)+')';
+}
 function drawDashboard(){
   const b=document.getElementById('body');
   const id=stamp();
@@ -2268,17 +2330,20 @@ function drawDashboard(){
     const h=new Date().getHours();
     const hello=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', '+esc((ME.name||'').split(' ')[0]);
     const dateTxt=t0.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+    const rangeName=DRANGE.key==='custom' ? (DRANGE.from===DRANGE.to ? DRANGE.from : DRANGE.from+' – '+DRANGE.to)
+      : (DASH_LIST.filter(function(r){ return r[0]===DRANGE.key; })[0]||['','Today'])[1].toLowerCase();
     const tile=function(label, value, sub, cls, onclick){
       return '<div class="dtile'+(cls?' '+cls:'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'>'+
         '<div class="dl">'+label+'</div><div class="dv">'+value+'</div><div class="ds">'+sub+'</div></div>';
     };
     const tiles='<div class="dtiles">'+
-      tile('Drivers', num(total), who ? esc(who)+'\'s book' : isMgr() ? 'in the whole book' : 'in your book', '', "go('pipeline')")+
+      tile('Drivers', num(total), (who ? esc(who)+'\'s book' : isMgr() ? 'in the whole book' : 'in your book')+', right now', '', "go('pipeline')")+
       tile('Driving', num(live), (total ? Math.round(live/total*100)+'% of the book · ' : '')+'drove in the last 5 days', 'good', "goStage('Active')")+
-      '<div class="dtile" id="dTrips" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')"><div class="dl">Completed trips</div><div class="dv">…</div><div class="ds">this cycle</div></div>'+
-      tile('Calls today', num(calledToday), '<span id="dCallsVs">&nbsp;</span>', '', "jumpTo('"+(isMgr() && !who ? 'dTeam' : 'agentWork')+"')")+
-      tile('Overdue', num(overdue), overdue ? 'follow-ups past their date' : 'nothing late', overdue?'bad':'', "go('overdue')")+
-      tile('At risk', num(atRisk), 'idle 3 to 5 days', atRisk?'warn':'', "go('atRisk')")+
+      '<div class="dtile per" id="dTrips" onclick="KPI_WHO=\''+esc(who)+'\';go(\'kpi\')"><div class="dl">Completed trips <em>'+esc(rangeName)+'</em></div><div class="dv">…</div><div class="ds">&nbsp;</div></div>'+
+      '<div class="dtile per" id="dCallsT" onclick="jumpTo(\''+(isMgr() && !who ? 'dTeam' : 'agentWork')+'\')"><div class="dl">Calls <em>'+esc(rangeName)+'</em></div>'+
+        '<div class="dv">'+(DRANGE.key==='today'?num(calledToday):'…')+'</div><div class="ds" id="dCallsVs">&nbsp;</div></div>'+
+      tile('Overdue', num(overdue), overdue ? 'follow-ups past their date, right now' : 'nothing late', overdue?'bad':'', "go('overdue')")+
+      tile('At risk', num(atRisk), 'idle 3 to 5 days, right now', atRisk?'warn':'', "go('atRisk')")+
       (isMgr() && !can('scoreboard') ? '' : isMgr() && !who
         ? '<div class="dtile score" id="dScoreTile" onclick="go(\'team\')">'+
             '<div class="dl">Incentives this cycle</div><div class="dv">…</div><div class="ds">all agents, so far</div></div>'
@@ -2309,10 +2374,10 @@ function drawDashboard(){
     b.innerHTML =
       '<div class="tdhead"><div><h3>'+hello+'</h3><p class="dim">'+dateTxt+
         (who ? ' · showing <b>'+esc(who)+'</b> <span class="lnk" onclick="todayFor(\'\')">show everyone</span>' : '')+
-      '</p></div></div>'+
+      '</p></div>'+dashCtl()+'</div>'+
       tiles+
       '<div class="dgrid">'+
-        '<div class="panel"><div class="tph"><h4>Calls — last 14 days</h4>'+
+        '<div class="panel"><div class="tph"><h4 id="dCallsH">Calls</h4>'+
           '<span class="dlegend"><i class="lg a"></i>answered <i class="lg n"></i>no answer</span></div>'+
           '<div id="dCalls" class="dchart"><div class="dim" style="padding:40px 0;text-align:center">Loading…</div></div></div>'+
         '<div class="panel"><div class="tph"><h4>Where the drivers are</h4>'+
@@ -2326,34 +2391,43 @@ function drawDashboard(){
           '<div class="dim">Working it out…</div></div>'+
       '</div>'+
       (isMgr() && !who ? '<div class="panel" id="dTeam"><div class="tph"><h4>The team</h4>'+
-          '<span class="dim">This week\'s calls, this cycle\'s trips and score · click an agent for their dashboard</span></div>'+teamTable(todayStr, t0)+'</div>'
+          '<span class="dim">Calls and trips: '+esc(rangeName)+' · score: this cycle · click an agent for their dashboard</span></div>'+teamTable(todayStr, t0)+'</div>'
         : '<div class="dgrid"><div id="dGuide"></div><div id="agentWork"></div></div>');
 
     /* ---------- the pieces that come from the server ---------- */
     run().withSuccessHandler(function(r){
       if(VIEW!=='today' || !r || !r.ok) return;
-      const el=document.getElementById('dCalls'); if(el) el.innerHTML=barChart(r.days);
-      const t=r.days[r.days.length-1], y=r.days[r.days.length-2];
-      // the big number and the comparison count the same thing: calls made today
-      const cv=document.querySelector('#dCallsVs'); const tileV=cv && cv.closest('.dtile').querySelector('.dv');
-      if(tileV) tileV.textContent=num(t.calls);
-      const vs=document.getElementById('dCallsVs');
-      if(vs) vs.innerHTML = t.calls===y.calls ? 'same as yesterday ('+y.calls+')'
-        : (t.calls>y.calls ? '<b class="up">▲ '+(t.calls-y.calls)+'</b>' : '<b class="down">▼ '+(y.calls-t.calls)+'</b>')+
-          ' vs yesterday ('+y.calls+')';
+      const R=r.range||{key:'today', label:'Today', from:todayStr, to:todayStr, today:todayStr, days:1};
+      const el=document.getElementById('dCalls'); if(el) el.innerHTML=barChart(r.days, R.today);
+      const hh=document.getElementById('dCallsH');
+      if(hh) hh.textContent='Calls — '+(R.days<14 ? 'the 14 days to '+(R.to===R.today?'today':dayName(R.to)) : R.label.toLowerCase());
+      // the big number and the comparison count the same thing: the period's calls
+      const ct=document.getElementById('dCallsT');
+      if(ct && r.calls && r.calls.since && r.calls.since>R.upto){
+        ct.querySelector('.dv').textContent='—';
+        ct.querySelector('.ds').textContent='not recorded — the CRM\'s calls start '+dayName(r.calls.since);
+      } else if(ct && r.calls){
+        ct.querySelector('.dv').textContent=num(r.calls.n);
+        ct.querySelector('.ds').innerHTML=(r.calls.n ? Math.round(r.calls.answered/r.calls.n*100)+'% answered · ' : '')+
+          dashVs(r.calls.n, r.calls.prev, r.calls.covered, R, 'calls');
+      }
       Object.keys(r.team||{}).forEach(function(a){
         const c=document.getElementById('tw-'+cls(a)); if(c) c.innerHTML=weekCell(r.team[a]);
       });
+      if(r.trips && r.trips.byAgent) document.querySelectorAll('[id^="tt-"]').forEach(function(c){ c.innerHTML='<span class="dim">0</span>'; });
       if(r.trips && r.trips.byAgent) Object.keys(r.trips.byAgent).forEach(function(a){
         const c=document.getElementById('tt-'+cls(a)); if(c) c.innerHTML='<b>'+num(r.trips.byAgent[a])+'</b>'; });
       const tt=document.getElementById('dTrips');
       if(tt && r.trips){
-        tt.querySelector('.dv').textContent=num(r.trips.cycle);
-        const f=new Date(r.trips.from+'T12:00:00');
-        tt.querySelector('.ds').textContent='this cycle, since '+f.getDate()+' '+f.toLocaleDateString('en-GB',{month:'short'})+
-          ' · '+num(r.trips.total)+' all time';
+        const T=r.trips;
+        const none=!T.covered && (!T.since || T.since>R.upto);
+        tt.querySelector('.dv').textContent=none ? '—' : num(T.n);
+        tt.querySelector('.ds').innerHTML = none ? 'not recorded — daily trips start '+(T.since?dayName(T.since):'after the first night')
+          : !T.covered ? 'from '+dayName(T.since)+' only — daily trips start then'
+          : R.key==='today' ? 'since this morning, as of the last sync'
+          : (T.isCycle ? 'since '+dayName(R.from)+' (the KPI count) · ' : '')+dashVs(T.n, T.prev, T.prevCovered, R, 'trips');
       }
-    }).getDashStats(SID, who);
+    }).getDashStats(SID, who, DRANGE);
     if(!(isMgr() && !who)) drawAgentWork(who || ME.name, true);     // their calls this cycle, folded
 
     const fillScore=function(k){
@@ -2416,7 +2490,7 @@ function teamTable(todayStr, t0){
   const max=Math.max(1, names.reduce(function(m,n){ return Math.max(m, by[n].n); },0));
   const c=function(v,warn){ return '<td class="num'+(v&&warn?' warn':'')+'">'+(v?num(v):'<span class="dim">0</span>')+'</td>'; };
   return '<div style="overflow-x:auto"><table class="ttable"><thead><tr><th>Agent</th><th>Book</th>'+
-      '<th>Calls this week</th><th class="num">Trips this cycle</th><th>Score</th><th class="num">Overdue</th><th class="num">At risk</th>'+
+      '<th>Calls</th><th class="num">Trips</th><th>Score</th><th class="num">Overdue</th><th class="num">At risk</th>'+
       '<th class="num">Untouched leads</th></tr></thead><tbody>'+
     names.map(function(n){ const r=by[n];
       return '<tr onclick="todayFor(\''+esc(n).replace(/'/g,"\\'")+'\')"><td><b>'+esc(n)+'</b></td>'+
@@ -2439,7 +2513,8 @@ function weekCell(t){
 }
 
 /* ---------- small charts, drawn as SVG ---------- */
-function barChart(days){
+function barChart(days, todayStr){
+  days=days.filter(function(d){ return !d.future; });         // the rest of a running cycle is not drawn
   const max=Math.max(4, days.reduce(function(m,d){ return Math.max(m,d.calls); },0));
   // the side numbers get the room they need (429 was cut to "29"), and each day says its total
   const pad=12+String(max).length*8, W=560, H=180, bw=(W-pad)/days.length;
@@ -2449,13 +2524,16 @@ function barChart(days){
     g+='<line x1="'+pad+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'" class="gl"/>'+
        '<text x="'+(pad-6)+'" y="'+(y(v)+4)+'" class="ax" text-anchor="end">'+v+'</text>'; });
   days.forEach(function(d,i){
-    const x=pad+i*bw+bw*0.18, w=bw*0.64, today=(i===days.length-1);
+    const x=pad+i*bw+bw*0.18, w=bw*0.64, today=todayStr ? d.d===todayStr : (i===days.length-1);
     const ya=y(d.answered), yc=y(d.calls);
+    g+='<g'+(d.inRange===false?' class="out"':'')+'>';
     g+='<rect x="'+x+'" y="'+yc+'" width="'+w+'" height="'+Math.max(0,ya-yc)+'" rx="3" class="bn"/>';
     g+='<rect x="'+x+'" y="'+ya+'" width="'+w+'" height="'+Math.max(0,(H-24)-ya)+'" rx="3" class="ba'+(today?' today':'')+'">'+
        '<title>'+d.d+': '+d.calls+' calls, '+d.answered+' answered</title></rect>';
-    if(d.calls) g+='<text x="'+(x+w/2)+'" y="'+(yc-4)+'" class="ax bv" text-anchor="middle">'+num(d.calls)+'</text>';
-    if(i%2===days.length%2 || today)
+    if(d.calls && days.length<=16) g+='<text x="'+(x+w/2)+'" y="'+(yc-4)+'" class="ax bv" text-anchor="middle">'+num(d.calls)+'</text>';
+    g+='</g>';
+    const step=Math.max(2, Math.ceil(days.length/16));
+    if((days.length-1-i)%step===0 || today)
       g+='<text x="'+(x+w/2)+'" y="'+(H-8)+'" class="ax'+(today?' tdy':'')+'" text-anchor="middle">'+
          (today?'Today':Number(d.d.slice(8)))+'</text>';
   });
@@ -2499,6 +2577,8 @@ function cycleRing(done, of, left, len){
 function ymdLocal(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+/* "13 Oct" from "2026-10-13" */
+function dayName(k){ const d=new Date(String(k)+'T12:00:00'); return isNaN(d) ? String(k||'') : d.getDate()+' '+d.toLocaleDateString('en-GB',{month:'short'}); }
 
 /* a manager clicks an agent in the team table */
 function todayFor(name){
@@ -2843,7 +2923,23 @@ function kpiTeamHero(steps){
    Every number is set against the same length of time just before it. Charts for the days, the
    funnel from lead to driving, the agents side by side, the at-risk follow-up, the closed cycles,
    and where this cycle is heading at today's pace. Worked out in the database, on request. */
-let ANA = { preset:'cycle', from:'', to:'', agent:'', mode:'cycle', count:4, row:'trips', heat:'conv' };
+/* ---------- Analytics (rebuilt 22 Oct): three questions, in this order ----------
+   1. Is the supply growing?  drivers who started driving and came back, against those who stopped
+   2. Where does it leak?     the lead funnel, and what is left undone in the book right now
+   3. Who delivers?           the agents side by side, coloured against the team
+   The same periods as the Dashboard; a comparison only where the CRM recorded the period before. */
+let ANA = { key:'cycle', from:'', to:'', agent:'' };
+function anaPay(points){
+  const t=(ME.kpiPayout||[]); if(!t.length) return 0;
+  if(points>=t[0][0]) return t[0][1]+Math.floor((points-t[0][0])/10+1e-9)*150;
+  for(let i=0;i<t.length;i++) if(points>=t[i][0]) return t[i][1];
+  return 0;
+}
+function anaSet(k, from, to){
+  if(k==='custom' && !(from && to)){ const t=ymdLocal(today0()); ANA.key='custom'; ANA.from=ANA.from||t; ANA.to=ANA.to||t; }
+  else { ANA.key=k; if(k==='custom'){ ANA.from=from; ANA.to=to; } }
+  drawAnalytics();
+}
 function drawAnalytics(){
   const b=document.getElementById('body');
   b.innerHTML=loader('Working out the numbers…');
@@ -2852,193 +2948,168 @@ function drawAnalytics(){
     if(!current(id) || VIEW!=='analytics') return;
     if(!r || !r.ok){ b.innerHTML='<div class="empty"><h3>Analytics</h3><p>'+esc((r&&r.msg)||'No answer')+'</p></div>'; return; }
     paintAnalytics(r);
-  }).getAnalytics(SID, { mode: ANA.mode, count: ANA.count, agent: ANA.agent });
+  }).getAnalytics(SID, { key:ANA.key, from:ANA.from, to:ANA.to, agent:ANA.agent });
 }
-function anaPay(points){
-  const t=(ME.kpiPayout||[]); if(!t.length) return 0;
-  if(points>=t[0][0]) return t[0][1]+Math.floor((points-t[0][0])/10+1e-9)*150;
-  for(let i=0;i<t.length;i++) if(points>=t[i][0]) return t[i][1];
-  return 0;
-}
-/* ---------- Analytics, the page (rebuilt again 21 Oct): compare the business period by period ----------
-   The last N cycles, months or weeks side by side: a scorecard of the numbers that run the business,
-   each with its change from the period before; click a row for its chart. Then each agent across
-   the same periods, what the latest numbers say, and where this cycle is heading. No driver named. */
-const ANA_ROWS = [
-  // key, label, group, value(p), format, lowerIsBetter, needs ('crm' | 'trips' | ''), count (projected while running)
-  ['leads',  'New leads',               'Supply',  function(p){ return p.leads; }, 'n', false, '', true],
-  ['conv',   'Leads that onboarded',    'Supply',  function(p){ return p.leads ? p.leads_onb/p.leads : null; }, '%', false, 'crm', false],
-  ['onb',    'Onboarded',               'Supply',  function(p){ return p.onboarded; }, 'n', false, 'crm', true],
-  ['act',    'Activation rate',         'Supply',  function(p){ return p.onb_judged ? p.onb_act/p.onb_judged : null; }, '%', false, 'crm', false],
-  ['lost',   'Drivers lost',            'Supply',  function(p){ return p.churned; }, 'n', true, '', true],
-  ['back',   'Drivers won back',        'Supply',  function(p){ return p.back; }, 'n', false, 'crm', true],
-  ['net',    'Net drivers gained',      'Supply',  function(p){ return p.activated + p.back - p.churned; }, 's', false, 'crm', true],
-  ['work',   'Working drivers (end)',   'Supply',  function(p){ return p.workingEnd; }, 'n', false, 'trips', false],
-  ['trips',  'Completed trips',         'Trips',   function(p){ return p.trips; }, 'n', false, 'trips', true],
-  ['tpd',    'Trips a day',             'Trips',   function(p){ return p.days ? p.trips/p.days : null; }, 'n', false, 'trips', false],
-  ['calls',  'Calls',                   'Team',    function(p){ return p.calls; }, 'n', false, 'crm', true],
-  ['ans',    'Answered',                'Team',    function(p){ return p.calls ? p.answered/p.calls : null; }, '%', false, 'crm', false],
-  ['cpo',    'Calls per onboarding',    'Team',    function(p){ return p.onboarded ? p.calls/p.onboarded : null; }, 'n', true, 'crm', false],
-  ['fc2',    'First call within 2 days','Team',    function(p){ return p.leadsAll ? p.within2/p.leadsAll : null; }, '%', false, 'crm', false],
-  ['paid',   'Incentives paid',         'Money',   function(p){ return p.paid; }, 'm', true, '', false],
-  ['ppt',    'Incentive per trip',      'Money',   function(p){ return (p.paid!==null && p.trips) ? p.paid/p.trips : null; }, 'm2', true, 'trips', false]
-];
-const ANA_HELP = {
-  leads:'Drivers who signed up on the platform in the period.', conv:'Of the drivers who signed up in the period, the share onboarded since.',
-  onb:'Drivers moved into onboarding by a call in the period.', act:'Of those onboarded in the period whose 7 days are over, the share who made 5 trips inside them.',
-  lost:'Drivers who stopped in the period (6 days without a trip) and have not come back.', back:'Drivers who drove again in the period after they had churned.',
-  net:'Activated + won back − lost: how many more working drivers the period left you with.', work:'Drivers who drove in the last 5 days, at the period\'s end.',
-  trips:'Completed trips by every driver in the book.', tpd:'Completed trips, per day.', calls:'Calls logged by the team (not hand-overs).', ans:'Calls answered, of all calls.',
-  cpo:'Calls made for each onboarding — fewer means less effort per new driver.', fc2:'New leads called within 2 days of signing up.',
-  paid:'Incentives paid for the cycle (agents, frozen at its close).', ppt:'Incentives paid, per completed trip.'
-};
-/* a small line across the periods, for the glance tiles */
-function anaSpark(vals){
-  const pts=vals.map(function(v,i){ return v===null?null:[i,v]; }).filter(Boolean);
-  if(pts.length<2) return '';
-  const mn=Math.min.apply(null,pts.map(function(p){ return p[1]; })), mx=Math.max.apply(null,pts.map(function(p){ return p[1]; }));
-  const W=120, H=34, x=function(i){ return 2+i*(W-4)/Math.max(1,vals.length-1); }, y=function(v){ return H-3-(mx===mn?0.5:(v-mn)/(mx-mn))*(H-6); };
-  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'"><polyline points="'+pts.map(function(p){ return x(p[0])+','+y(p[1]); }).join(' ')+'"/>'+
-    '<circle cx="'+x(pts[pts.length-1][0])+'" cy="'+y(pts[pts.length-1][1])+'" r="3"/></svg>';
-}
-function anaFmt(v, f){
-  if(v===null || v===undefined || isNaN(v)) return '—';
-  if(f==='%') return Math.round(v*100)+'%';
-  if(f==='m') return money(Math.round(v));
-  if(f==='m2') return money(Math.round(v*100)/100);
-  if(f==='s') return (v>0?'+':'')+num(Math.round(v));
-  return num(Math.round(v*10)/10);
-}
-function anaVal(row, p){
-  const need=row[6];
-  if(need==='crm' && !p.recorded) return null;
-  if(need==='trips' && !p.tripsRecorded) return null;
-  return row[3](p);
-}
-/* a period the CRM only recorded part of (it started inside it): shown, but not compared */
-function anaPartial(row, p){ return (row[6]==='crm' && p.partial) || (row[6]==='trips' && p.tripsPartial); }
-function anaLabel(p, mode){
-  const d=function(x){ const t=new Date(x+'T12:00:00'); return t.getDate()+' '+t.toLocaleDateString('en-GB',{month:'short'}); };
-  if(mode==='month') return new Date(p.from+'T12:00:00').toLocaleDateString('en-GB',{month:'short', year:'numeric'});
-  return d(p.from)+' – '+d(p.to);
-}
-function anaChange(a, b, lower){                      // b → a
-  if(a===null || b===null || a===undefined || b===undefined) return '<span class="dim">—</span>';
-  if(!b && !a) return '<span class="vd same">Same</span>';
-  if(!b) return '<span class="vd '+(lower?'worse':'better')+'">New</span>';
-  const d=(a-b)/Math.abs(b)*100;
-  if(Math.abs(d)<2) return '<span class="vd same">Same</span>';
-  const good = lower ? d<0 : d>0;
-  return '<span class="vd '+(good?'better':'worse')+'">'+(d>0?'▲':'▼')+' '+Math.abs(d).toFixed(Math.abs(d)<10?1:0)+'%</span>';
+const anaPct=function(a,b){ return b ? Math.round(a/b*100) : 0; };
+/* a change, said as a word and coloured by whether it is good: up is good unless lower=true */
+function anaDelta(now, before, ok, lower){
+  if(!ok) return '';
+  if(now===before) return '<span class="an-d same">same as before ('+num(before)+')</span>';
+  const up=now>before, good=lower ? !up : up, d=Math.abs(now-before);
+  return '<span class="an-d '+(good?'good':'bad')+'">'+(up?'▲ ':'▼ ')+num(d)+' vs before ('+num(before)+')</span>';
 }
 function paintAnalytics(r){
-  ANA_LAST=r;
-  const b=document.getElementById('body'), P=r.periods, n=P.length, last=P[n-1], prev=P[n-2];
-  // a running period's counts are compared on pace (what they will be at its end)
-  const val=function(row,p,forChange){ const v=anaVal(row,p); if(v===null) return null;
-    return (forChange && p.running && row[7] && p.daysIn) ? v*p.daysAll/p.daysIn : v; };
-  const changes=ANA_ROWS.map(function(row){ if(anaPartial(row,prev) || anaPartial(row,last)) return null;
-    const a=val(row,last,true), c=val(row,prev,true);
-    if(a===null||c===null||!c) return null; const d=(a-c)/Math.abs(c); return { row:row, d:d, good: row[5] ? d<0 : d>0, a:a, c:c }; }).filter(function(x){ return x && Math.abs(x.d)>=0.02; });
-  const nb=changes.filter(function(x){ return x.good; }).length, nw=changes.length-nb;
-  const big=changes.slice().sort(function(x,y){ return Math.abs(y.d)-Math.abs(x.d); }).slice(0,4);
-  const unit={ cycle:'cycle', month:'month', week:'week' }[r.mode];
-  // the row picked: its chart across the periods
-  const sel=ANA_ROWS.find(function(x){ return x[0]===ANA.row; }) || ANA_ROWS[8];
-  const vals=P.map(function(p){ return anaVal(sel,p); }), mx=Math.max(1e-9, Math.max.apply(null, vals.map(function(v){ return v===null?0:Math.abs(v); })));
-  const chart='<div class="pchart">'+P.map(function(p,i){ const v=vals[i];
-      const h=v===null?0:Math.max(2,Math.round(Math.abs(v)/mx*150));
-      return '<div class="pcol"><div class="pval">'+anaFmt(v,sel[4])+(p.running&&v!==null&&sel[7]?'<em>so far</em>':'')+'</div>'+
-        '<div class="pbar'+(p.running?' run':'')+(v!==null&&v<0?' neg':'')+'" style="height:'+h+'px"></div><div class="plbl">'+anaLabel(p,r.mode)+'</div></div>'; }).join('')+'</div>';
-  let grp='';
-  const rows=ANA_ROWS.filter(function(row){ return r.mode==='cycle' || row[2]!=='Money'; }).map(function(row){
-    const head = row[2]!==grp ? '<tr class="grp"><td colspan="'+(n+2)+'">'+row[2]+'</td></tr>' : ''; grp=row[2];
-    return head+'<tr class="'+(row[0]===sel[0]?'sel':'')+'" title="'+esc(ANA_HELP[row[0]]||'')+'" onclick="ANA.row=\''+row[0]+'\';paintAnalytics(ANA_LAST)"><td>'+row[1]+'</td>'+
-      P.map(function(p){ const v=anaVal(row,p), part=v!==null && anaPartial(row,p);
-        return '<td class="num">'+anaFmt(v,row[4])+
-          (part ? '<div class="pace">from '+(row[6]==='trips'?r.since.trips:r.since.calls).slice(5)+'</div>' :
-           p.running && v!==null && row[7] ? '<div class="pace">on pace '+anaFmt(v*p.daysAll/Math.max(1,p.daysIn),row[4])+'</div>' : '')+'</td>'; }).join('')+
-      '<td class="num">'+(anaPartial(row,last)||anaPartial(row,prev) ? '<span class="dim" title="the CRM started recording inside one of the two">—</span>' :
-        anaChange(val(row,last,true), val(row,prev,true), row[5]))+'</td></tr>'; }).join('');
-  // each agent across the periods
-  const HEAT=[['conv','Leads that onboarded','%'],['act','Activation rate','%'],['calls','Calls','n'],['cpo','Calls per onboarding','n',true],
-              ['trips','Completed trips','n'],['lost','Drivers lost','n',true],['back','Won back','n'],['points','KPI points','n']];
-  const hm=HEAT.find(function(x){ return x[0]===ANA.heat; }) || HEAT[0];
-  const hv=function(x){ if(!x) return null;
-    switch(hm[0]){ case 'conv': return x.leads ? (x.leadsOnb||0)/x.leads : null; case 'act': return x.judged ? (x.act||0)/x.judged : null;
-      case 'cpo': return x.onboarded ? (x.calls||0)/x.onboarded : null; default: return x[hm[0]]===undefined ? null : x[hm[0]]; } };
-  const ags=(r.agentList||[]).filter(function(a){ return !ANA.agent || a===ANA.agent; });
-  const all=[]; ags.forEach(function(a){ P.forEach(function(p){ const v=hv((r.heat[p.from]||{})[a]); if(v!==null) all.push(v); }); });
-  const hmax=Math.max(1e-9, Math.max.apply(null, all.length?all:[0])), hmin=Math.min.apply(null, all.length?all:[0]);
-  const shade=function(v){ if(v===null) return ''; const t=(v-hmin)/Math.max(1e-9,hmax-hmin); const good=hm[3]?1-t:t;
-    return 'background:rgba('+(good>=0.5?'22,163,74':'220,38,38')+','+(0.08+Math.abs(good-0.5)*0.5).toFixed(2)+')'; };
-  const presets=[['cycle','By cycle'],['month','By month'],['week','By week']];
-  b.innerHTML =
-    '<div class="panel ana-top"><div class="ana-ctl">'+
-      '<div class="seg2">'+presets.map(function(p){ return '<span class="'+(r.mode===p[0]?'on':'')+'" onclick="ANA.mode=\''+p[0]+'\';drawAnalytics()">'+p[1]+'</span>'; }).join('')+'</div>'+
-      '<div class="seg2">'+[3,4,6,12].map(function(k){ return '<span class="'+(ANA.count===k?'on':'')+'" onclick="ANA.count='+k+';drawAnalytics()">'+k+'</span>'; }).join('')+'</div>'+
-      '<select onchange="ANA.agent=this.value;drawAnalytics()"><option value="">The whole team</option>'+
-        (ME.agentNames||[]).map(function(a){ return '<option'+(a===ANA.agent?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+'</select>'+
-    '</div><div class="ana-head"><h3>'+(changes.length ? (nb>=nw?'Better than last '+unit:'Worse than last '+unit)+' — '+nb+' up, '+nw+' down' : 'Not enough recorded yet to compare')+'</h3>'+
-      '<span class="dim">'+anaLabel(last,r.mode)+(last.running?' (running — counts compared on pace)':'')+' against '+anaLabel(prev,r.mode)+(ANA.agent?' · '+esc(ANA.agent):' · the whole team')+'</span>'+
-      (big.length ? '<ul class="moves">'+big.map(function(x){ return '<li class="'+(x.good?'up':'down')+'"><b>'+x.row[1]+'</b> '+(x.d>0?'rose':'fell')+' from '+anaFmt(x.c,x.row[4])+' to '+anaFmt(x.a,x.row[4])+'</li>'; }).join('')+'</ul>' : '')+
-    '</div></div>'+
-    '<div class="glance">'+['trips','work','conv','act','lost','net'].map(function(k){
-        const row=ANA_ROWS.find(function(x){ return x[0]===k; }); const vs=P.map(function(p){ return anaVal(row,p); });
-        const v=val(row,last,false), part=anaPartial(row,last)||anaPartial(row,prev);
-        return '<div class="gtile" onclick="ANA.row=\''+k+'\';paintAnalytics(ANA_LAST)" title="'+esc(ANA_HELP[k])+'">'+
-          '<div class="gl">'+row[1]+'</div><div class="gv">'+anaFmt(v,row[4])+'</div>'+
-          '<div class="gs">'+(part?'<span class="dim">—</span>':anaChange(val(row,last,true), val(row,prev,true), row[5]))+anaSpark(vs)+'</div></div>'; }).join('')+'</div>'+
-    '<div class="panel"><div class="tph"><h4>'+sel[1]+'</h4><span class="dim">click any row or tile to see it here</span></div>'+chart+
-      '<p class="dim" style="font-size:12.5px;margin:10px 0 0">'+esc(ANA_HELP[sel[0]]||'')+'</p></div>'+
-    '<div class="panel"><div class="tph"><h4>The scorecard</h4><span class="dim">— means not recorded in that '+unit+' (the CRM keeps calls and onboardings from '+(r.since.calls||'—')+', daily trips from '+(r.since.trips||'tonight')+')</span></div>'+
-      '<div style="overflow-x:auto"><table class="atable sc"><thead><tr><th></th>'+P.map(function(p){ return '<th class="num">'+anaLabel(p,r.mode)+(p.running?'<div class="pace">running</div>':'')+'</th>'; }).join('')+
-        '<th class="num">Change</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
-    (ANA.agent ? '' : '<div class="panel"><div class="tph"><h4>Each agent, '+unit+' by '+unit+'</h4><span class="dim">green is good, red is not — for the measure picked</span></div>'+
-      '<div class="ana-chips">'+HEAT.map(function(h){ return '<span class="'+(h[0]===hm[0]?'on':'')+'" onclick="ANA.heat=\''+h[0]+'\';paintAnalytics(ANA_LAST)">'+h[1]+'</span>'; }).join('')+'</div>'+
-      '<div style="overflow-x:auto"><table class="atable heat"><thead><tr><th>Agent</th>'+P.map(function(p){ return '<th class="num">'+anaLabel(p,r.mode)+'</th>'; }).join('')+'</tr></thead><tbody>'+
-        ags.map(function(a){ return '<tr onclick="ANA.agent=\''+esc(a)+'\';drawAnalytics()"><td><b>'+esc(a)+'</b></td>'+P.map(function(p){
-          const v=hv((r.heat[p.from]||{})[a]); return '<td class="num" style="'+shade(v)+'">'+anaFmt(v, hm[2])+'</td>'; }).join('')+'</tr>'; }).join('')+
-      '</tbody></table></div></div>')+
-    '<div id="anaMore"></div>';
-  anaMore(r);
+  const b=document.getElementById('body');
+  const R=r.range, N=r.now, P=r.prev, B=r.nowBook, L=r.leadsIn, C=r.churnIn, S=r.since||{};
+  const who=r.agent ? esc(r.agent)+'\'s book' : 'the whole team';
+  const span=R.from===R.upto ? dayName(R.from) : dayName(R.from)+' – '+dayName(R.upto);
+  const t=ymdLocal(today0());
+  /* the controls */
+  const ctl='<div class="dctl"><select onchange="anaSet(this.value)">'+DASH_LIST.map(function(x){
+      return '<option value="'+x[0]+'"'+(ANA.key===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')+'</select>'+
+    (ANA.key==='custom' ? '<input type="date" id="aFrom" max="'+t+'" value="'+esc(ANA.from)+'"><span class="dim">to</span>'+
+      '<input type="date" id="aTo" max="'+t+'" value="'+esc(ANA.to)+'"><button class="btn sm" onclick="anaSet(\'custom\', $(\'aFrom\').value, $(\'aTo\').value)">Show</button>' : '')+
+    '<select onchange="ANA.agent=this.value;drawAnalytics()"><option value="">The whole team</option>'+
+      (r.agentList||[]).map(function(a){ return '<option'+(a===r.agent?' selected':'')+'>'+esc(a)+'</option>'; }).join('')+'</select></div>';
+  /* what was recorded: said once, plainly */
+  const gaps=[];
+  if(!r.rec.calls) gaps.push(!S.calls||S.calls>R.upto ? 'no calls yet (the CRM\'s calls start '+(S.calls?dayName(S.calls):'later')+')' : 'calls from '+dayName(S.calls));
+  if(!r.rec.trips) gaps.push(!S.trips||S.trips>R.upto ? 'no daily trips yet (they start '+(S.trips?dayName(S.trips):'after the first night')+')' : 'daily trips from '+dayName(S.trips));
+  const cmpTxt=(r.cmp.crm||r.cmp.trips) ? 'Compared with '+(R.prevFrom===r.prevTo?dayName(R.prevFrom):dayName(R.prevFrom)+' – '+dayName(r.prevTo))+(R.running&&R.days>1?' (the same days)':'')+'.'
+    : 'No comparison yet: the CRM did not record the period before.';
+  /* 1. supply */
+  const net=N.net, headline = net>0 ? 'The supply grew by '+num(net)+' driver'+(net===1?'':'s')
+    : net<0 ? 'The supply shrank by '+num(-net)+' driver'+(net===-1?'':'s') : 'The supply held steady';
+  const flow='<div class="an-flow">'+
+      '<div class="an-f in"><b>+'+num(N.activated)+'</b><span>started driving</span>'+anaDelta(N.activated,P.activated,r.cmp.crm)+'</div>'+
+      '<div class="an-f back"><b>+'+num(N.back)+'</b><span>came back</span>'+anaDelta(N.back,P.back,r.cmp.crm)+'</div>'+
+      '<div class="an-f out"><b>−'+num(N.churned)+'</b><span>stopped (5+ idle days)</span>'+anaDelta(N.churned,P.churned,r.cmp.crm,true)+'</div>'+
+      '<div class="an-f net '+(net>=0?'pos':'neg')+'"><b>'+(net>0?'+':net<0?'−':'')+num(Math.abs(net))+'</b><span>net change</span>'+
+        '<span class="an-d same">'+num(B.working)+' driving now</span></div>'+
+    '</div>';
+  const supply='<div class="panel an-hero"><div class="tph"><div><h3 class="an-h">'+headline+'</h3>'+
+      '<p class="dim">'+span+' · '+who+'. '+cmpTxt+(gaps.length?' Recorded: '+gaps.join(', ')+'.':'')+'</p></div>'+ctl+'</div>'+
+    flow+'<div id="anFlowChart">'+anaFlowChart(r.series)+'</div>'+
+    '<div class="an-legend"><i class="key kin"></i>started <i class="key kback"></i>came back <i class="key kout"></i>stopped</div></div>';
+  /* the work and the output: trips and calls */
+  const tripsTxt=r.rec.trips ? num(N.trips) : '—';
+  const perDay=N.days ? N.trips/Math.min(N.days, R.daysSoFar||N.days) : 0;
+  const work='<div class="an-cards">'+
+    anaCard('Completed trips', tripsTxt, r.rec.trips ? num(Math.round(perDay))+' a day · '+(B.working?(N.trips/B.working).toFixed(1)+' per driver driving now':'') : 'daily trips start '+dayName(S.trips),
+      anaDelta(N.trips,P.trips,r.cmp.trips))+
+    anaCard('Calls', num(N.calls), anaPct(N.answered,N.calls)+'% answered'+(r.rec.calls?'':' · from '+dayName(S.calls)), anaDelta(N.calls,P.calls,r.cmp.crm))+
+    anaCard('Onboarded', num(N.onboarded), r.rec.calls&&N.onboarded ? Math.round(N.calls/N.onboarded)+' calls per onboarding' : 'agreed to start driving', anaDelta(N.onboarded,P.onboarded,r.cmp.crm))+
+    anaCard('Reached 5 trips in a week', N.onb_judged ? anaPct(N.onb_act,N.onb_judged)+'%' : '—',
+      N.onb_judged ? num(N.onb_act)+' of '+num(N.onb_judged)+' whose first week is over (KPI 2 target 25%)' : 'no onboarding\'s first week is over yet', '')+
+  '</div>';
+  /* 2. the leaks: the funnel of the period's new leads, and what is undone right now */
+  const fun=[['Signed up', L.leads], ['Called', L.called], ['Onboarded', L.onboarded], ['Drove once', L.drove], ['Reached 5 trips', L.five]];
+  const funnel='<div class="panel"><div class="tph"><h4>New leads of the period</h4><span class="dim">'+num(L.leads)+' signed up '+span+'</span></div>'+
+    (L.leads ? fun.map(function(x,i){ const w=anaPct(x[1],L.leads);
+      return '<div class="an-fun"><span>'+x[0]+'</span><div class="an-fb"><i style="width:'+Math.max(w,x[1]?1.5:0)+'%"></i></div>'+
+        '<b>'+num(x[1])+'</b><em>'+(i?w+'%':'')+'</em></div>'; }).join('')+
+      '<p class="an-say">'+num(L.never)+' were never called'+(L.leads?' ('+anaPct(L.never,L.leads)+'%)':'')+'; '+
+        anaPct(L.within2,L.leads)+'% got a first call within 2 days of signing up.</p>'
+      : '<p class="dim">Nobody signed up in this period.</p>')+'</div>';
+  const leak=function(n, of, what, why, view){
+    return '<div class="an-leak" onclick="go(\''+view+'\')"><b class="'+(n?'':'zero')+'">'+num(n)+'</b>'+
+      '<div><span>'+what+'</span><em>'+why+'</em></div><span class="lnk">Open</span></div>'; };
+  const leaks='<div class="panel"><div class="tph"><h4>Left undone right now</h4><span class="dim">'+who+' · today</span></div>'+
+    leak(B.never_called, B.leads, 'new leads nobody has called', num(B.never_called_old)+' of them signed up over 3 days ago', 'leads')+
+    (r.agent ? '' : leak(B.unassigned, B.leads, 'new leads with no agent', 'nobody will call them until they are assigned', 'unassigned'))+
+    leak(B.onb_stuck, B.onboarding, 'onboarded over a week ago, still no trip', num(B.onb_stuck_uncalled)+' not called since their week ended', 'activation')+
+    leak(B.at_risk, 0, 'driving, but idle 3 to 5 days', num(B.at_risk_called)+' called since — the rest churn soon', 'atRisk')+
+    leak(B.recent_churn, 0, 'stopped in the last 30 days', num(B.recent_churn_uncalled)+' not called since they stopped', 'churned')+
+    '</div>';
+  /* does calling work? */
+  const nc=(L.leads||0)-(L.called||0), sc=C.called||0, sn=(C.stopped||0)-sc;
+  const pair=function(title, a, an, b2, bn, unit){
+    const pa=anaPct(a,an), pb=anaPct(b2,bn), m=Math.max(pa,pb,1);
+    return '<div class="an-pair"><div class="an-pt">'+title+'</div>'+
+      '<div class="an-pr"><span>Called</span><div class="an-fb"><i style="width:'+(pa/m*100)+'%"></i></div><b>'+pa+'%</b><em>'+num(a)+' of '+num(an)+'</em></div>'+
+      '<div class="an-pr"><span>Not called</span><div class="an-fb grey"><i style="width:'+(pb/m*100)+'%"></i></div><b>'+pb+'%</b><em>'+num(b2)+' of '+num(bn)+'</em></div></div>'; };
+  const calling='<div class="panel"><div class="tph"><h4>Does calling work?</h4><span class="dim">this period</span></div>'+
+    (L.called>=5 && nc>=5 ? pair('New leads who onboarded', L.called_onb, L.called, L.notcalled_onb, nc) : '<p class="dim">Too few leads to compare yet.</p>')+
+    (sc>=5 && sn>=5 ? pair('Drivers who stopped and came back', C.called_back, sc, C.notcalled_back, sn) : '<p class="dim">Too few drivers stopped to compare yet.</p>')+'</div>';
+  /* 3. the agents */
+  const rows=(r.agents||[]).filter(function(a){ return a.book; });
+  const team=rows.reduce(function(s,a){ Object.keys(a).forEach(function(k){ if(typeof a[k]==='number') s[k]=(s[k]||0)+a[k]; }); return s; }, {});
+  // calls a day over the days the CRM recorded calls in this period
+  const cFrom=S.calls && S.calls>R.from ? S.calls : R.from;
+  const daysIn=Math.max(1, Math.round((Date.parse(R.upto)-Date.parse(cFrom))/864e5)+1);
+  const cols=[
+    ['Calls a day', function(a){ return a.calls/daysIn; }, function(v){ return num(Math.round(v)); }, false, true],
+    ['Answered', function(a){ return a.calls ? a.answered/a.calls : null; }, function(v){ return Math.round(v*100)+'%'; }],
+    ['Onboarded', function(a){ return a.onboarded; }, num, false, true],
+    ['Reached 5 trips', function(a){ return a.onbJudged ? a.onbAct/a.onbJudged : null; }, function(v){ return Math.round(v*100)+'%'; }],
+    ['Trips per driver', function(a){ return a.working ? a.trips/a.working : null; }, function(v){ return v.toFixed(1); }],
+    ['Came back', function(a){ return a.back; }, num, false, true],
+    ['Stopped', function(a){ return a.churned; }, num, true, true],
+    ['At risk called', function(a){ return a.atRisk ? a.atRiskCalled/a.atRisk : null; }, function(v){ return Math.round(v*100)+'%'; }]];
+  const avg=cols.map(function(c){ const v=c[1](Object.assign({}, team, {working:team.working})); return v; });
+  const agents='<div class="panel"><div class="tph"><h4>The agents</h4><span class="dim">'+span+' · green: better than the average agent, red: worse · click a name for that agent</span></div>'+
+    '<div style="overflow-x:auto"><table class="ttable an-agents"><thead><tr><th>Agent</th><th class="num">Book</th><th class="num">Trips</th>'+
+      cols.map(function(c){ return '<th class="num">'+c[0]+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    rows.sort(function(a,b){ return b.trips-a.trips; }).map(function(a){
+      return '<tr onclick="ANA.agent=\''+esc(a.agent).replace(/'/g,"\\'")+'\';drawAnalytics()"><td><b>'+esc(a.agent)+'</b></td>'+
+        '<td class="num">'+num(a.book)+' <span class="dim">· '+num(a.working)+' driving</span></td><td class="num"><b>'+(r.rec.trips?num(a.trips):'—')+'</b></td>'+
+        cols.map(function(c,i){ const v=c[1](a); if(v===null||v===undefined) return '<td class="num dim">—</td>';
+          const ref=avg[i]===null||isNaN(avg[i])?null:(c[4] ? avg[i]/Math.max(1,rows.length) : avg[i]);
+          // a count against the average agent, a rate against the team; within 5% is "the same"
+          const better=ref===null||Math.abs(v-ref)<=Math.abs(ref)*0.05 ? '' : ((v>ref)!==!!c[3] ? 'hgood' : 'hbad');
+          return '<td class="num '+better+'">'+c[2](v)+'</td>'; }).join('')+'</tr>'; }).join('')+
+    '<tr class="tot"><td>All agents</td><td class="num">'+num(team.book||0)+' <span class="dim">· '+num(team.working||0)+' driving</span></td><td class="num"><b>'+(r.rec.trips?num(team.trips||0):'—')+'</b></td>'+
+      cols.map(function(c,i){ const v=avg[i]; return '<td class="num">'+(v===null||v===undefined||isNaN(v)?'—':c[2](v))+'</td>'; }).join('')+'</tr>'+
+    '</tbody></table></div></div>';
+  b.innerHTML=supply+work+'<div class="dgrid an-2">'+funnel+leaks+'</div>'+agents+'<div class="dgrid an-2">'+calling+'<div id="anaPace"></div></div>';
+  anaPace(r);
 }
-/* below the comparison: what the latest numbers say, and where this cycle is heading */
-function anaMore(r){
-  const el=document.getElementById('anaMore'); if(!el) return;
-  const L=r.leadsIn||{}, Ch=r.churnIn||{}, BK=r.backlog||{}, CC=r.conc||{}, says=[];
-  const nc=(L.leads||0)-(L.called||0), pc=L.called?L.called_onb/L.called:0, pn=nc?L.notcalled_onb/nc:0;
-  if(L.called>=5 && nc>=5 && pn>0) says.push([ (pc/pn).toFixed(1)+'×', 'more new leads onboard when they are called ('+Math.round(pc*100)+'% against '+Math.round(pn*100)+'%).' ]);
-  if(L.leads) says.push([ Math.round((L.within2||0)/L.leads*100)+'%', 'of new leads got a first call within 2 days ('+num(L.never||0)+' never called).' ]);
-  const sc=Ch.called||0, sn=(Ch.stopped||0)-sc;
-  if(sc>=5 && sn>=5) says.push([ Math.round(Ch.called_back/sc*100)+'% vs '+Math.round(Ch.notcalled_back/sn*100)+'%', 'of drivers who stopped came back when called, against not called.' ]);
-  if((BK.a3||0)+(BK.a4||0)) says.push([ num((BK.a3||0)+(BK.a4||0)), 'open leads have waited over two weeks.' ]);
-  if(CC.trips) says.push([ Math.round(CC.top20/CC.trips*100)+'%', 'of this cycle\'s trips come from the top 20% of drivers; '+num(CC.zero)+' working drivers have none yet.' ]);
-  const co=(r.cohorts||[]).filter(function(c){ return c.activated>=5; }).slice(-2)[0];
-  if(co) says.push([ Math.round(co.working/co.activated*100)+'%', 'of the drivers activated in '+co.m+' still drive.' ]);
-  const Cy=r.cycle, f=Cy.days/Math.max(1,Cy.elapsed), so=Cy.sofar;
-  el.innerHTML=(says.length ? '<div class="panel"><div class="tph"><h4>What the latest numbers say</h4><span class="dim">'+r.from+' → '+r.to+'</span></div>'+
-      '<div class="says">'+says.map(function(x){ return '<div class="say"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'; }).join('')+'</div></div>' : '')+
-    '<div class="panel"><div class="tph"><h4>This cycle, at today\'s pace</h4><span class="dim">'+Cy.from+' → '+Cy.to+' · day '+Cy.elapsed+' of '+Cy.days+'</span></div>'+
-      '<div class="fgrid">'+[['Completed trips', so.trips], ['New leads', so.leads], ['Onboarded', so.onboarded], ['Activated', so.activated], ['Won back', so.back], ['Lost', so.churned]]
-        .map(function(x){ return '<div class="fcell"><span>'+x[0]+'</span><b>'+num(Math.round(x[1]*f))+'</b><em>'+num(x[1])+' so far</em></div>'; }).join('')+'</div>'+
-      '<div id="anaForecast" class="dim" style="font-size:12.5px;margin-top:10px">'+(can('scoreboard')?'Working out the incentives…':'')+'</div></div>';
-  if(can('scoreboard')) run().withSuccessHandler(function(sb){
-    const fe=document.getElementById('anaForecast'); if(!fe || !sb || !sb.ok) { if(fe) fe.textContent=''; return; }
-    const rows=(sb.rows||[]).filter(function(x){ return !ANA.agent || x.agent===ANA.agent; }).map(function(x){
+function anaCard(label, value, sub, delta){
+  return '<div class="dtile"><div class="dl">'+label+'</div><div class="dv">'+value+'</div><div class="ds">'+sub+'</div>'+(delta?'<div class="ds">'+delta+'</div>':'')+'</div>';
+}
+/* gains above the line, losses below: a day a bar, a week a bar past 45 days */
+function anaFlowChart(series){
+  let s=(series||[]).map(function(x){ return {d:x.d, i:x.activated, b:x.back, o:x.churned}; });
+  if(s.length>45){ const w=[]; s.forEach(function(x,k){ if(k%7===0) w.push({d:x.d,i:0,b:0,o:0}); const y=w[w.length-1]; y.i+=x.i; y.b+=x.b; y.o+=x.o; }); s=w; }
+  if(!s.length) return '';
+  // drawn at the size it is shown, so the labels stay readable on a phone
+  const W=Math.round(Math.min(1100, Math.max(320, window.innerWidth-(window.innerWidth<1000?56:330)))), H=190, pad=34, mid=H*0.55;
+  const up=Math.max(1, Math.max.apply(null, s.map(function(x){ return x.i+x.b; }))), dn=Math.max(1, Math.max.apply(null, s.map(function(x){ return x.o; })));
+  const sc=Math.max(up, dn), hu=mid-14, hd=H-mid-20, bw=(W-pad)/s.length, w=Math.max(2, bw*0.62);
+  let g='<line x1="'+pad+'" x2="'+W+'" y1="'+mid+'" y2="'+mid+'" class="grid"/>'+
+    '<text x="'+(pad-6)+'" y="'+(mid-hu+4)+'" class="ax" text-anchor="end">+'+sc+'</text><text x="'+(pad-6)+'" y="'+(mid+hd*Math.min(1,dn/sc)+4)+'" class="ax" text-anchor="end">−'+dn+'</text>';
+  const step=Math.max(1, Math.ceil(s.length/Math.max(3, Math.floor(W/75))));
+  s.forEach(function(x,k){
+    const X=pad+k*bw+(bw-w)/2, hi=x.i/sc*hu, hb=x.b/sc*hu, ho=x.o/sc*hd;
+    g+='<g><title>'+dayName(x.d)+(series.length>45?' (week)':'')+': +'+x.i+' started, +'+x.b+' came back, −'+x.o+' stopped</title>'+
+      (hi?'<rect x="'+X+'" y="'+(mid-hi)+'" width="'+w+'" height="'+hi+'" class="fin"/>':'')+
+      (hb?'<rect x="'+X+'" y="'+(mid-hi-hb)+'" width="'+w+'" height="'+hb+'" class="fback"/>':'')+
+      (ho?'<rect x="'+X+'" y="'+mid+'" width="'+w+'" height="'+ho+'" class="fout"/>':'')+'</g>';
+    if((s.length-1-k)%step===0) g+='<text x="'+(X+w/2)+'" y="'+(H-4)+'" class="ax" text-anchor="middle">'+dayName(x.d)+'</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="achart an-chart">'+g+'</svg>';
+}
+/* the running cycle at today's pace: trips and what the incentives come to */
+function anaPace(r){
+  const el=document.getElementById('anaPace'); if(!el) return;
+  const Cy=r.cycle, f=Cy.days/Math.max(1,Cy.elapsed), end=Math.round(Cy.trips*f);
+  el.innerHTML='<div class="panel"><div class="tph"><h4>This cycle at today\'s pace</h4><span class="dim">day '+Cy.elapsed+' of '+Cy.days+' · ends '+dayName(Cy.to)+'</span></div>'+
+    '<div class="an-pace"><div><span>Completed trips</span><b>'+num(end)+'</b><em>'+num(Cy.trips)+' so far</em></div>'+
+    '<div id="anaPay"><span>Incentives</span><b>…</b><em>&nbsp;</em></div><div id="anaPer"><span>Incentive per trip</span><b>…</b><em>&nbsp;</em></div></div>'+
+    '<p class="an-say dim">Trip KPIs grown at today\'s pace, onboarding KPIs as they stand. An estimate, not the payout.</p></div>';
+  if(!can('scoreboard')){ ['anaPay','anaPer'].forEach(function(i){ const e=document.getElementById(i); if(e) e.remove(); }); return; }
+  run().withSuccessHandler(function(sb){
+    if(!sb || !sb.ok || VIEW!=='analytics') return;
+    const rows=(sb.rows||[]).filter(function(x){ return !r.agent || x.agent===r.agent; });
+    const pay=rows.reduce(function(s,x){
       const k=function(key){ const z=(x.kpis||[]).find(function(y){ return y.key===key; }); return z?z.points:0; };
-      const pts=k('lead')+k('activation')+(k('productivity')+k('reactivation'))*f;
-      return { a:x.agent, now:x.total, pts:pts, pay:anaPay(pts) }; });
-    if(!rows.length){ fe.textContent=''; return; }
-    const payEnd=rows.reduce(function(s,x){ return s+x.pay; },0), tripsEnd=Math.round(so.trips*f);
-    fe.innerHTML='<table class="atable"><thead><tr><th>Agent</th><th class="num">Points now</th><th class="num">At this pace</th><th class="num">Incentive</th></tr></thead><tbody>'+
-      rows.map(function(x){ return '<tr><td>'+esc(x.a)+'</td><td class="num">'+(Math.round(x.now*10)/10)+'</td><td class="num"><b>'+(Math.round(x.pts*10)/10)+'</b></td><td class="num">'+money(x.pay)+'</td></tr>'; }).join('')+
-      '<tr class="tot"><td>Total</td><td></td><td></td><td class="num"><b>'+money(payEnd)+'</b></td></tr></tbody></table>'+
-      '<p class="ana-say">'+(tripsEnd ? 'About <b>'+money(Math.round(payEnd/tripsEnd*100)/100)+'</b> in incentives per completed trip at this pace. ' : '')+
-      'Trip KPIs grown at today\'s pace; onboarding KPIs as they stand — an estimate, not the payout.</p>';
+      return s+anaPay(k('lead')+k('activation')+(k('productivity')+k('reactivation'))*f); }, 0);
+    const p=document.getElementById('anaPay'), q=document.getElementById('anaPer');
+    if(p){ p.querySelector('b').innerHTML=money(pay); p.querySelector('em').textContent=egp(sb.totalMoney||0)+' if it ended today'; }
+    if(q){ q.querySelector('b').innerHTML=end ? money(Math.round(pay/end*100)/100) : '—'; q.querySelector('em').textContent=rows.length+' agent'+(rows.length===1?'':'s'); }
   }).getScoreboard(SID, 'current');
 }
-let ANA_LAST=null;
+
 
 /* ---------- Call lists: who to work on, KPI by KPI ----------
    One colour per KPI, the number that matters big on the right, a coloured tag for how urgent,
