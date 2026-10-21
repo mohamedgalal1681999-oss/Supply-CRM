@@ -247,6 +247,11 @@
   .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;} .fcell{border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
   .fcell span{display:block;font-size:12px;color:var(--dim);} .fcell b{display:block;font-size:22px;} .fcell em{font-style:normal;font-size:11.5px;color:var(--dim);}
   .kteam .km1{font-size:34px;}
+  .glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px;}
+  .gtile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;transition:transform .15s;}
+  .gtile:hover{transform:translateY(-2px);} .gl{font-size:12.5px;color:var(--dim);} .gv{font-size:26px;font-weight:700;margin:2px 0 6px;}
+  .gs{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .spark{width:110px;height:30px;} .spark polyline{fill:none;stroke:#3b6ee0;stroke-width:2;} .spark circle{fill:#3b6ee0;}
   .moves{margin:8px 0 0;padding-left:18px;font-size:13.5px;line-height:1.7;} .moves li.up::marker{color:#16a34a;} .moves li.down::marker{color:#dc2626;}
   .pchart{display:flex;gap:10px;align-items:flex-end;min-height:210px;padding-top:10px;}
   .pcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:60px;}
@@ -1186,27 +1191,54 @@ function crmTiming(fn, ms, size, j){
   // run the server in Frankfurt, next to the database (Supabase otherwise picks the region nearest
   // the user, and every one of the server's database round trips then crosses the distance)
   var API = window.CRM_API || 'https://rdpajghmcxehxyuutrfd.supabase.co/functions/v1/crm?forceFunctionRegion=eu-central-1';
+  /* One request per question, except reads asked for together: they wait a moment (10 ms) and go as
+     one batch — one round trip, one warm server — instead of four or five at once (22 Oct).
+     getVersion (the 15-second check) and every write go alone, at once. */
+  var BATCHABLE = { getSession:1, getWorkset:1, getDashStats:1, getKpi:1, getKpiTeam:1, getScoreboard:1, getTodos:1,
+                    getAgentCalls:1, getAgents:1, assignOptions:1, listUsers:1, exportOptions:1 };
+  var QUEUE = [], QTIMER = null;
+  function deliver(item, x){
+    var ok = item.ok, fail = item.fail;
+    if (!x) { if (fail) fail(new Error('Could not reach the server — check your connection and try again.')); return; }
+    var j = x.j;
+    if (j && j.error) { if (fail) fail(new Error(j.error)); return; }
+    if (!x.ok || !j) { if (fail) fail(new Error('The server could not finish this (' + x.status +
+        (j && (j.message || j.code) ? ': ' + (j.message || j.code) : '') + '). Try again in a moment.')); return; }
+    if (ok) ok(j.value);
+  }
+  function post(body, label, t0){
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.text().then(function(t){ var j = null; try { j = JSON.parse(t); } catch (e) {}
+                                                           crmTiming(label, Date.now() - t0, t.length, j);
+                                                           return { ok: r.ok, status: r.status, j: j }; }); },
+            function(){ return null; });
+  }
+  function flush(){
+    QTIMER = null;
+    var items = QUEUE; QUEUE = [];
+    if (!items.length) return;
+    var t0 = Date.now();
+    if (items.length === 1) { post({ fn: items[0].fn, args: items[0].args }, items[0].fn, t0).then(function(x){ deliver(items[0], x); }); return; }
+    post({ batch: items.map(function(i){ return { fn: i.fn, args: i.args }; }) },
+         items.map(function(i){ return i.fn; }).join('+'), t0).then(function(x){
+      // an old server (no batches): ask one by one
+      if (x && x.ok && x.j && !Array.isArray(x.j.batch)) { items.forEach(function(i){ post({ fn: i.fn, args: i.args }, i.fn, Date.now()).then(function(y){ deliver(i, y); }); }); return; }
+      items.forEach(function(it, k){
+        if (!x || !x.ok || !x.j) return deliver(it, x);
+        var one = x.j.batch[k] || { error: 'No answer' };
+        deliver(it, { ok: true, status: 200, j: one });
+      });
+    });
+  }
   function runner(ok, fail){
     return new Proxy({}, { get: function(_, fn){
       if (fn === 'withSuccessHandler') return function(f){ return runner(f, fail); };
       if (fn === 'withFailureHandler') return function(f){ return runner(ok, f); };
       return function(){
-        var args = Array.prototype.slice.call(arguments), t0 = Date.now();
-        fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ fn: fn, args: args }) })
-          .then(function(r){ return r.text().then(function(t){ var j = null; try { j = JSON.parse(t); } catch (e) {}
-                                                               crmTiming(fn, Date.now() - t0, t.length, j);
-                                                               return { ok: r.ok, status: r.status, j: j }; }); },
-                function(){ return null; })
-          .then(function(x){
-            if (!x) { if (fail) fail(new Error('Could not reach the server — check your connection and try again.')); return; }
-            var j = x.j;
-            if (j && j.error) { if (fail) fail(new Error(j.error)); return; }
-            // the hosting platform's own refusals (too slow, out of resources) arrive without our answer
-            if (!x.ok || !j) { if (fail) fail(new Error('The server could not finish this (' + x.status +
-                (j && (j.message || j.code) ? ': ' + (j.message || j.code) : '') + '). Try again in a moment.')); return; }
-            if (ok) ok(j.value);
-          });
+        var item = { fn: fn, args: Array.prototype.slice.call(arguments), ok: ok, fail: fail };
+        if (!BATCHABLE[fn]) { var t0 = Date.now(); post({ fn: fn, args: item.args }, fn, t0).then(function(x){ deliver(item, x); }); return; }
+        QUEUE.push(item);
+        if (!QTIMER) QTIMER = setTimeout(flush, 10);
       };
     }});
   }
@@ -2841,6 +2873,24 @@ const ANA_ROWS = [
   ['paid',   'Incentives paid',         'Money',   function(p){ return p.paid; }, 'm', true, '', false],
   ['ppt',    'Incentive per trip',      'Money',   function(p){ return (p.paid!==null && p.trips) ? p.paid/p.trips : null; }, 'm2', true, 'trips', false]
 ];
+const ANA_HELP = {
+  leads:'Drivers who signed up on the platform in the period.', conv:'Of the drivers who signed up in the period, the share onboarded since.',
+  onb:'Drivers moved into onboarding by a call in the period.', act:'Of those onboarded in the period whose 7 days are over, the share who made 5 trips inside them.',
+  lost:'Drivers who stopped in the period (6 days without a trip) and have not come back.', back:'Drivers who drove again in the period after they had churned.',
+  net:'Activated + won back − lost: how many more working drivers the period left you with.', work:'Drivers who drove in the last 5 days, at the period\'s end.',
+  trips:'Completed trips by every driver in the book.', tpd:'Completed trips, per day.', calls:'Calls logged by the team (not hand-overs).', ans:'Calls answered, of all calls.',
+  cpo:'Calls made for each onboarding — fewer means less effort per new driver.', fc2:'New leads called within 2 days of signing up.',
+  paid:'Incentives paid for the cycle (agents, frozen at its close).', ppt:'Incentives paid, per completed trip.'
+};
+/* a small line across the periods, for the glance tiles */
+function anaSpark(vals){
+  const pts=vals.map(function(v,i){ return v===null?null:[i,v]; }).filter(Boolean);
+  if(pts.length<2) return '';
+  const mn=Math.min.apply(null,pts.map(function(p){ return p[1]; })), mx=Math.max.apply(null,pts.map(function(p){ return p[1]; }));
+  const W=120, H=34, x=function(i){ return 2+i*(W-4)/Math.max(1,vals.length-1); }, y=function(v){ return H-3-(mx===mn?0.5:(v-mn)/(mx-mn))*(H-6); };
+  return '<svg class="spark" viewBox="0 0 '+W+' '+H+'"><polyline points="'+pts.map(function(p){ return x(p[0])+','+y(p[1]); }).join(' ')+'"/>'+
+    '<circle cx="'+x(pts[pts.length-1][0])+'" cy="'+y(pts[pts.length-1][1])+'" r="3"/></svg>';
+}
 function anaFmt(v, f){
   if(v===null || v===undefined || isNaN(v)) return '—';
   if(f==='%') return Math.round(v*100)+'%';
@@ -2893,7 +2943,7 @@ function paintAnalytics(r){
   let grp='';
   const rows=ANA_ROWS.filter(function(row){ return r.mode==='cycle' || row[2]!=='Money'; }).map(function(row){
     const head = row[2]!==grp ? '<tr class="grp"><td colspan="'+(n+2)+'">'+row[2]+'</td></tr>' : ''; grp=row[2];
-    return head+'<tr class="'+(row[0]===sel[0]?'sel':'')+'" onclick="ANA.row=\''+row[0]+'\';paintAnalytics(ANA_LAST)"><td>'+row[1]+'</td>'+
+    return head+'<tr class="'+(row[0]===sel[0]?'sel':'')+'" title="'+esc(ANA_HELP[row[0]]||'')+'" onclick="ANA.row=\''+row[0]+'\';paintAnalytics(ANA_LAST)"><td>'+row[1]+'</td>'+
       P.map(function(p){ const v=anaVal(row,p), part=v!==null && anaPartial(row,p);
         return '<td class="num">'+anaFmt(v,row[4])+
           (part ? '<div class="pace">from '+(row[6]==='trips'?r.since.trips:r.since.calls).slice(5)+'</div>' :
@@ -2923,7 +2973,14 @@ function paintAnalytics(r){
       '<span class="dim">'+anaLabel(last,r.mode)+(last.running?' (running — counts compared on pace)':'')+' against '+anaLabel(prev,r.mode)+(ANA.agent?' · '+esc(ANA.agent):' · the whole team')+'</span>'+
       (big.length ? '<ul class="moves">'+big.map(function(x){ return '<li class="'+(x.good?'up':'down')+'"><b>'+x.row[1]+'</b> '+(x.d>0?'rose':'fell')+' from '+anaFmt(x.c,x.row[4])+' to '+anaFmt(x.a,x.row[4])+'</li>'; }).join('')+'</ul>' : '')+
     '</div></div>'+
-    '<div class="panel"><div class="tph"><h4>'+sel[1]+'</h4><span class="dim">click any row below to see it here</span></div>'+chart+'</div>'+
+    '<div class="glance">'+['trips','work','conv','act','lost','net'].map(function(k){
+        const row=ANA_ROWS.find(function(x){ return x[0]===k; }); const vs=P.map(function(p){ return anaVal(row,p); });
+        const v=val(row,last,false), part=anaPartial(row,last)||anaPartial(row,prev);
+        return '<div class="gtile" onclick="ANA.row=\''+k+'\';paintAnalytics(ANA_LAST)" title="'+esc(ANA_HELP[k])+'">'+
+          '<div class="gl">'+row[1]+'</div><div class="gv">'+anaFmt(v,row[4])+'</div>'+
+          '<div class="gs">'+(part?'<span class="dim">—</span>':anaChange(val(row,last,true), val(row,prev,true), row[5]))+anaSpark(vs)+'</div></div>'; }).join('')+'</div>'+
+    '<div class="panel"><div class="tph"><h4>'+sel[1]+'</h4><span class="dim">click any row or tile to see it here</span></div>'+chart+
+      '<p class="dim" style="font-size:12.5px;margin:10px 0 0">'+esc(ANA_HELP[sel[0]]||'')+'</p></div>'+
     '<div class="panel"><div class="tph"><h4>The scorecard</h4><span class="dim">— means not recorded in that '+unit+' (the CRM keeps calls and onboardings from '+(r.since.calls||'—')+', daily trips from '+(r.since.trips||'tonight')+')</span></div>'+
       '<div style="overflow-x:auto"><table class="atable sc"><thead><tr><th></th>'+P.map(function(p){ return '<th class="num">'+anaLabel(p,r.mode)+(p.running?'<div class="pace">running</div>':'')+'</th>'; }).join('')+
         '<th class="num">Change</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
@@ -3732,6 +3789,9 @@ function drawUsers(){
       '<div class="panel"><div style="display:flex;justify-content:space-between;'+
       'align-items:center;margin-bottom:13px"><h4 style="margin:0">Who can sign in</h4>'+
       '<button class="btn" onclick="openNewUser()">Add someone</button></div>'+
+      (function(){ const no=r.users.filter(function(u){ return u.active && !u.email; });
+        return no.length ? '<div class="note" style="margin:0 0 12px">No email on '+no.map(function(u){ return esc(u.name); }).join(', ')+
+          ' — an @mention or the cycle report cannot reach '+(no.length===1?'them':'them')+'. Add it below.</div>' : ''; })()+
       '<p class="dim" style="margin:-4px 0 15px">A new account opens empty. Nobody sees a '+
       'driver until that driver is assigned to them.</p>'+
       '<div style="overflow-x:auto"><table><thead><tr><th>Name</th><th>Username</th>'+
@@ -4356,7 +4416,8 @@ function logPanel(){
     '</div>'+
 
     '<div class="fld"><label>Next follow-up</label><input type="date" id="fu"></div>'+
-    '<div class="fld"><label>Note</label><textarea id="nt" rows="2"></textarea></div>'+
+    '<div class="fld mwrap"><label>Note</label><textarea id="nt" rows="2" placeholder="type @ to mention someone"'+
+      ' oninput="mentionInput(this)" onkeydown="mentionKey(event,this)"></textarea><div class="mpick" id="mpick-nt"></div></div>'+
     '<div class="fld"><label>To-do <span class="dim" style="font-weight:400">— optional, with a time; it reminds you</span></label>'+
       todoForm('ctd', '', true)+'</div>'+
     '<button class="btn" id="sv" onclick="saveCall(\''+d.phone+'\')">Save call</button></div>';
@@ -4702,6 +4763,11 @@ function saveCall(phone){
   run().withSuccessHandler(function(res){
     btn.disabled=false; btn.textContent='Save call';
     if(!res.ok){ alert(res.msg); return; }
+    if(res.mentioned){                                   // an @mention in the note: say who was told
+      const m=res.mentioned; const told=(m.notified||[]).join(', ');
+      setTimeout(function(){ toast((told?'Emailed '+told:'')+((m.noEmail||[]).length?(told?' · ':'')+(m.noEmail.join(', '))+' has no email':'')); }, 600);
+      if(res.noteAdded) DRV.notes = DRV.notes || [];
+    }
 
     // Update what we already have and repaint — no round trip, no Loading screen
     DRV.calls.unshift(res.call);
