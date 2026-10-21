@@ -247,6 +247,16 @@
   .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;} .fcell{border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
   .fcell span{display:block;font-size:12px;color:var(--dim);} .fcell b{display:block;font-size:22px;} .fcell em{font-style:normal;font-size:11.5px;color:var(--dim);}
   .kteam .km1{font-size:34px;}
+  #notice{position:fixed;inset:0;background:rgba(15,20,30,.35);display:none;align-items:center;justify-content:center;z-index:9999;}
+  #notice.on{display:flex;}
+  #notice .nc{background:var(--card);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.25);padding:22px 24px 18px;max-width:420px;width:calc(100% - 40px);
+    display:grid;grid-template-columns:36px 1fr;gap:4px 14px;align-items:start;border-top:4px solid #5000bc;}
+  #notice .ni{width:32px;height:32px;border-radius:50%;background:#efe7fb;color:#5000bc;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  #notice .nm{font-size:14.5px;line-height:1.5;padding-top:5px;white-space:pre-wrap;}
+  #notice .btn{grid-column:2;justify-self:end;margin-top:12px;min-width:80px;}
+  html[data-theme="dark"] #notice .ni{background:#2a1d45;color:#c4a8f5;}
+  .fld.bad select,.fld.bad textarea,.fld.bad input{border-color:#dc2626 !important;box-shadow:0 0 0 3px rgba(220,38,38,.15);}
+  .ferr{color:#dc2626;font-size:12.5px;font-weight:600;margin-top:5px;}
   .glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px;}
   .gtile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;transition:transform .15s;}
   .gtile:hover{transform:translateY(-2px);} .gl{font-size:12.5px;color:var(--dim);} .gv{font-size:26px;font-weight:700;margin:2px 0 6px;}
@@ -1079,7 +1089,7 @@
 
     <div class="grp">Your work</div>
     <a data-v="leads" title="KPI 1 — turn these into onboarding">New leads <em id="n-leads"></em></a>
-    <a data-v="activation" title="Onboarded, not yet at five trips — KPI 2 counts five inside seven days">Onboarding <em id="n-activation"></em></a>
+    <a data-v="activation" title="Onboarded, not yet at five trips: the Onboarding stage plus New Active drivers still short of five — KPI 2 counts five inside seven days">To activate <em id="n-activation"></em></a>
     <a data-v="atRisk" title="KPI 3 — keep them driving">At risk <em id="n-atRisk"></em></a>
     <a data-v="churned" title="Churned, last trip within 30 days — KPI 4: bring them back">Recently churned <em id="n-churn"></em></a>
     <a data-v="calls" title="The drivers behind each KPI, most urgent first">Call lists</a>
@@ -3214,14 +3224,14 @@ function todoReplace(t){
 function todoRepaint(){ if(VIEW==='todos') drawTodos(true); if(DRV && DTAB==='To-do') paintDriver(); }
 function todoTick(id, done){
   run().withSuccessHandler(function(r){
-    if(!r || !r.ok){ alert((r&&r.msg)||'Could not save'); todoRepaint(); return; }
+    if(!r || !r.ok){ notice((r&&r.msg)||'Could not save'); todoRepaint(); return; }
     todoReplace(r.todo); todoRepaint(); toast(done ? 'Done' : 'Open again');
   }).setTodoDone(SID, id, !!done);
 }
 function todoRemove(id){
   if(!confirm('Remove this to-do?')) return;
   run().withSuccessHandler(function(r){
-    if(!r || !r.ok){ alert((r&&r.msg)||'Could not remove'); return; }
+    if(!r || !r.ok){ notice((r&&r.msg)||'Could not remove'); return; }
     TODOS=(TODOS||[]).filter(function(x){ return x.id!==id; }); paintTodoBadge(); todoRepaint(); toast('Removed');
   }).deleteTodo(SID, id);
 }
@@ -3242,12 +3252,12 @@ function todoFromForm(pre){
 }
 function todoAdd(pre, phone, quiet, after){
   const f=todoFromForm(pre);
-  if(!f.text){ if(!quiet) alert('Write what needs doing'); return false; }
-  if(!f.due){ alert('Pick a day and a time'); return false; }
+  if(!f.text){ if(!quiet) notice('Write what needs doing'); return false; }
+  if(!f.due){ notice('Pick a day and a time'); return false; }
   const btn=document.getElementById(pre+'-go'); if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
   run().withSuccessHandler(function(r){
     if(btn){ btn.disabled=false; btn.textContent='Add'; }
-    if(!r || !r.ok){ alert((r&&r.msg)||'Could not add'); return; }
+    if(!r || !r.ok){ notice((r&&r.msg)||'Could not add'); return; }
     todoReplace(r.todo); const t=document.getElementById(pre+'-txt'); if(t) t.value='';
     todoRepaint(); toast('To-do added for '+todoWhenTxt(r.todo)); if(after) after();
   }).addTodo(SID, phone, f.text, f.due);
@@ -3416,7 +3426,7 @@ function scoreExcel(){
       a.download='scoreboard_'+r.from+'_to_'+r.to+(r.final?'':'_running')+'.xlsx';
       document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
       go.disabled=false; go.textContent='Download Excel';
-    }).catch(function(e){ go.disabled=false; go.textContent='Download Excel'; alert('Excel failed: '+(e && e.message ? e.message : e)); });
+    }).catch(function(e){ go.disabled=false; go.textContent='Download Excel'; notice('Excel failed: '+(e && e.message ? e.message : e)); });
   });
 }
 
@@ -3541,7 +3551,7 @@ function loadExcelJS(cb){
   const urls=['https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js',
               'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js'];
   (function next(i){
-    if(i>=urls.length){ alert('Could not load the Excel library. Check your connection and try again.'); return; }
+    if(i>=urls.length){ notice('Could not load the Excel library. Check your connection and try again.'); return; }
     const sc=document.createElement('script');
     sc.src=urls[i];
     sc.onload=function(){ window.ExcelJS ? cb() : next(i+1); };
@@ -3566,7 +3576,7 @@ function runExport(){
       toast('Downloaded '+num(EXP.data.rows.length)+' drivers');
     }).catch(function(e){
       go.disabled=false; go.textContent='Export to Excel';
-      alert('Export failed: '+(e && e.message ? e.message : e));
+      notice('Export failed: '+(e && e.message ? e.message : e));
     });
   });
 }
@@ -3874,7 +3884,7 @@ function saveUser(){
   btn.disabled=true; btn.textContent='Creating…';
   run().withSuccessHandler(function(r){
     btn.disabled=false; btn.textContent='Create the account';
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     showCredentials(r.name+' is in', r.username, r.password);
   }).addUser(SID,{
     name:document.getElementById('u-name').value,
@@ -3887,7 +3897,7 @@ function saveUser(){
 function resetPass(username){
   if(!confirm('Issue a new password for '+username+'? The current one stops working now.')) return;
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     document.getElementById('modal').classList.add('on');
     showCredentials('New password for '+r.name, username, r.password);
   }).resetPassword(SID, username);
@@ -3897,7 +3907,7 @@ function editEmail(username, current){
   const e = prompt('Email address for '+username+' — mention notifications go here:', current||'');
   if(e===null) return;
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     toast(r.email ? 'Email saved' : 'Email removed');
     drawUsers();
   }).setUserEmail(SID, username, e);
@@ -3909,7 +3919,7 @@ function renameUser(username, current){
   const n = prompt('New name for '+current+' (their drivers, calls, notes and results move with them):', current);
   if(n===null || n.trim()===current) return;
   run().withSuccessHandler(function(r){
-    if(!r || !r.ok){ alert((r && r.msg) || 'Could not rename'); return; }
+    if(!r || !r.ok){ notice((r && r.msg) || 'Could not rename'); return; }
     toast(r.from+' is now '+r.to);
     setTimeout(function(){ location.reload(); }, 900);         // every list and filter with the new name
   }).renameUser(SID, username, n);
@@ -3931,7 +3941,7 @@ function savePerms(username){
   const list=Array.from(document.querySelectorAll('#boxc .permrow input:checked')).map(function(x){ return x.value; });
   const b=document.getElementById('p-save'); b.disabled=true; b.textContent='Saving…';
   run().withSuccessHandler(function(r){
-    if(!r || !r.ok){ alert((r&&r.msg)||'Could not save'); b.disabled=false; b.textContent='Save'; return; }
+    if(!r || !r.ok){ notice((r&&r.msg)||'Could not save'); b.disabled=false; b.textContent='Save'; return; }
     closeModal(); toast('Access saved'); drawUsers();
   }).setUserPerms(SID, username, list);
 }
@@ -3940,7 +3950,7 @@ function removeUser(username){
   if(!confirm('Delete '+username+'? This only works for an account that has never '+
               'held a driver or logged a call.')) return;
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     toast(r.name+' deleted');
     drawUsers();
   }).deleteUser(SID, username);
@@ -3949,7 +3959,7 @@ function removeUser(username){
 function flipUser(username, on){
   if(!on && !confirm('Switch '+username+' off? Their drivers stay assigned to them.')) return;
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     toast(on ? r.name+' can sign in again'
              : r.name+' is off'+(r.held?' — '+r.held+' drivers still theirs':''));
     drawUsers();
@@ -4009,7 +4019,7 @@ function saveBatch(){
   const btn=document.getElementById('b-save');
   btn.disabled=true; btn.textContent='Saving…';
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); btn.disabled=false; btn.textContent='Save on all'; return; }
+    if(!r.ok){ notice(r.msg); btn.disabled=false; btn.textContent='Save on all'; return; }
     closeModal();
     toast(r.done+' calls logged'+(r.denied?', '+r.denied+' skipped (not yours)':''));
     PICK=[]; refreshBook(); loadList();
@@ -4142,7 +4152,7 @@ function assignFromCard(el, phone){
   el.disabled=true;
   run().withSuccessHandler(function(r){
     el.disabled=false;
-    if(!r.ok){ alert(r.msg); loadList(); return; }
+    if(!r.ok){ notice(r.msg); loadList(); return; }
     const d=DATA.filter(function(x){ return x.phone===phone; })[0];
     if(d) d.owner_agent=r.owner;
     toast(r.owner ? 'Now with '+r.owner : 'Unassigned');
@@ -4614,7 +4624,7 @@ function saveNote(phone){
   btn.disabled=true; btn.textContent='Saving…';
   run().withSuccessHandler(function(res){
     btn.disabled=false; btn.textContent='Save note';
-    if(!res.ok){ alert(res.msg); return; }
+    if(!res.ok){ notice(res.msg); return; }
     DRV.notes.unshift(res.note);   // newest first, nothing replaced
     EDITING=null; paintDriver(); toast(mentionToast(res.mentions, 'Note saved'));
   }).addNote(SID, phone, ta.value);
@@ -4623,7 +4633,7 @@ function saveNote(phone){
 function applyEdit(id){
   const ta=document.getElementById('eb-'+id);
   run().withSuccessHandler(function(res){
-    if(!res.ok){ alert(res.msg); return; }
+    if(!res.ok){ notice(res.msg); return; }
     for(let i=0;i<DRV.notes.length;i++){
       if(DRV.notes[i].note_id===id){ DRV.notes[i]=res.note; break; }
     }
@@ -4632,6 +4642,28 @@ function applyEdit(id){
 }
 
 /* ---------- feedback ---------- */
+/* Messages in the app's own look (22 Oct) — not the browser's "…github.io says" pop-up. */
+function notice(msg){
+  let n=document.getElementById('notice');
+  if(!n){ n=document.createElement('div'); n.id='notice'; n.innerHTML='<div class="nc"><div class="ni">!</div><div class="nm"></div><button class="btn">OK</button></div>';
+    document.body.appendChild(n);
+    n.querySelector('button').onclick=function(){ n.classList.remove('on'); };
+    n.onclick=function(e){ if(e.target===n) n.classList.remove('on'); };
+    document.addEventListener('keydown', function(e){ if(n.classList.contains('on') && (e.key==='Escape'||e.key==='Enter')){ e.preventDefault(); n.classList.remove('on'); } }); }
+  n.querySelector('.nm').textContent=String(msg==null?'':msg);
+  n.classList.add('on'); setTimeout(function(){ n.querySelector('button').focus(); }, 30);
+}
+/* A form field that needs something: marked red with the reason under it, until it is changed. */
+function fieldError(el, msg){
+  const box=el.closest('.fld')||el.parentNode;
+  box.classList.add('bad');
+  let m=box.querySelector('.ferr'); if(!m){ m=document.createElement('div'); m.className='ferr'; box.appendChild(m); }
+  m.textContent=msg;
+  const clear=function(){ box.classList.remove('bad'); if(m.parentNode) m.parentNode.removeChild(m); el.removeEventListener('change',clear); el.removeEventListener('input',clear); };
+  el.addEventListener('change',clear); el.addEventListener('input',clear);
+  el.scrollIntoView({block:'center', behavior:'smooth'}); el.focus();
+  return false;
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('on');
@@ -4660,7 +4692,7 @@ function applyStage(target){
   const phone=DRV.driver.phone;
   closeModal();
   run().withSuccessHandler(function(r){
-    if(!r.ok){ alert(r.msg); return; }
+    if(!r.ok){ notice(r.msg); return; }
     toast(r.unchanged ? 'Already '+r.stage : 'Now '+r.stage);
     patchBook(phone, function(x){ x.s=viewStage(r.stage); if(r.stage==='New Lead'){ x.ob=''; x.na=0; } });
     openDriver(phone);                                 // show the page as the server now has it
@@ -4727,7 +4759,7 @@ function saveNew(){
   btn.disabled=true; btn.textContent='Saving…';
   run().withSuccessHandler(function(res){
     btn.disabled=false; btn.textContent='Create lead';
-    if(!res.ok){ alert(res.msg); return; }
+    if(!res.ok){ notice(res.msg); return; }
     closeModal(); toast('Lead created');
     openDriver(res.phone);
   }).createDriver(SID,{
@@ -4743,7 +4775,7 @@ function changeOwner(){
   sel.disabled=true;
   run().withSuccessHandler(function(res){
     sel.disabled=false;
-    if(!res.ok){ alert(res.msg); paintDriver(); return; }
+    if(!res.ok){ notice(res.msg); paintDriver(); return; }
     DRV.driver.owner_agent=res.owner;
     toast(res.owner ? 'Now with '+res.owner : 'Unassigned');
     patchBook(DRV.driver.phone, function(x){ x.o=res.owner||''; }); adoptVersion(res);
@@ -4754,15 +4786,15 @@ function saveCall(phone){
   const resEl=document.getElementById('res'), ntEl=document.getElementById('nt'), stEl=document.getElementById('st');
   // an answered call says what was said — a blank one was saved by mistake and then again, properly
   if(stEl && stEl.value==='Answered' && resEl && !resEl.value){
-    alert('They picked up — choose what they said.'); resEl.focus(); return; }
+    return fieldError(resEl, 'They picked up — choose what they said.'); }
   if(resEl && resEl.value==='other' && ntEl && !ntEl.value.trim()){
-    alert('For "Other", write in the note what it was.'); ntEl.focus(); return; }
+    return fieldError(ntEl, 'For “Other”, write in the note what it was.'); }
   const btn=document.getElementById('sv');
   btn.disabled=true; btn.textContent='Saving…';
   const sg=document.getElementById('sg');
   run().withSuccessHandler(function(res){
     btn.disabled=false; btn.textContent='Save call';
-    if(!res.ok){ alert(res.msg); return; }
+    if(!res.ok){ notice(res.msg); return; }
     if(res.mentioned){                                   // an @mention in the note: say who was told
       const m=res.mentioned; const told=(m.notified||[]).join(', ');
       setTimeout(function(){ toast((told?'Emailed '+told:'')+((m.noEmail||[]).length?(told?' · ':'')+(m.noEmail.join(', '))+' has no email':'')); }, 600);
