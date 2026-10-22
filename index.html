@@ -1123,7 +1123,7 @@
 
     <div class="grp">Your work</div>
     <a data-v="leads" title="KPI 1 — turn these into onboarding">New leads <em id="n-leads"></em></a>
-    <a data-v="activation" title="Onboarded, not yet at five trips: the Onboarding stage plus New Active drivers still short of five — KPI 2 counts five inside seven days">To activate <em id="n-activation"></em></a>
+    <a data-v="activation" title="Onboarded, not yet at five trips: the Onboarding stage plus New Active drivers still short of five — KPI 2 counts each one's trips in the first seven days, up to five">To activate <em id="n-activation"></em></a>
     <a data-v="atRisk" title="KPI 3 — keep them driving">At risk <em id="n-atRisk"></em></a>
     <a data-v="churned" title="Churned, last trip within 30 days — KPI 4: bring them back">Recently churned <em id="n-churn"></em></a>
     <a data-v="calls" title="The drivers behind each KPI, most urgent first">Call lists</a>
@@ -2769,7 +2769,7 @@ function topPerformers(){
    A points gauge and the pay ladder, a ring per KPI with what it takes to hit its target,
    the book's trips, and a short guide: the cheapest way to the next pay step. The lists of
    drivers to work on are on their own page (Call lists). */
-const KPI_UNIT = { lead:'onboardings', activation:'activations (5 trips in 7 days)',
+const KPI_UNIT = { lead:'onboardings', activation:'first-week trips by drivers you onboarded (up to 5 each)',
                    productivity:'trips by your working drivers', reactivation:'trips by your churned drivers' };
 function kpiPicker(k, redraw){
   return k.isManager
@@ -3153,7 +3153,7 @@ function drawCallLists(){
     const lists=[
       ['cl-leads','#2563eb','New leads to call','KPI 1 — nobody has moved these into onboarding yet. Longest waiting first.', k.leadAction||[],
         function(r){ return row(r, r.age===null?'—':num(r.age), 'days waiting', r.action, 'lead since '+r.since); }, (k.actionTotals||{}).lead],
-      ['cl-onb','#d97706','Onboarding windows open','KPI 2 — five completed trips within seven days of onboarding. Closest to expiry first.', k.onboardingAction||[],
+      ['cl-onb','#d97706','Onboarding windows open','KPI 2 — every trip in the first seven days counts, up to five each. Closest to the end of their week first.', k.onboardingAction||[],
         function(r){ return row(r, r.daysLeft+(r.daysLeft===1?' day':' days'), r.remaining+' trips to go ('+r.trips+'/'+r.target+')', r.status, 'onboarded '+r.since); }, (k.actionTotals||{}).onboarding],
       ['cl-prod','#059669','Working drivers to push','KPI 3 — every trip they make counts toward the book\'s '+num(k.kpis[2].goal||90)+'. Fewest trips first.', k.productivityAction||[],
         function(r){ return row(r, num(r.trips), 'trips this cycle', r.status, r.idle===null?'':'idle '+r.idle+(r.idle===1?' day':' days')); }, (k.actionTotals||{}).productivity],
