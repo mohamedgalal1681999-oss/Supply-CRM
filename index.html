@@ -4257,15 +4257,20 @@ function boardHtml(){
   }).join('')+'</div>';
 }
 
+/* completed trips — what every KPI counts; the total only when the file had no completed column */
+function doneOf(d){
+  const c=d && d.completed_rides;
+  return (c!=='' && c!==null && c!==undefined && isFinite(Number(c))) ? Number(c) : Number((d && d.total_rides)||0);
+}
 function listHtml(){
   return '<table><thead><tr><th>Driver</th><th>Phone</th><th>City</th><th>Stage</th>'+
-    '<th class="num">Rides</th><th class="num">Days idle</th><th>Owner</th>'+
+    '<th class="num">Completed</th><th class="num">Days idle</th><th>Owner</th>'+
     '<th>Last call</th></tr></thead><tbody>'+
     DATA.map(function(d){
       return '<tr onclick="openDriver(\''+d.phone+'\')">'+
         '<td><b>'+(d.name||'Unnamed')+'</b>'+calledTodayMark(d)+'</td><td>'+d.phone+'</td>'+
         '<td>'+(d.city||'—')+'</td><td>'+swatch(d.stage)+'</td>'+
-        '<td class="num">'+(d.total_rides||0)+'</td>'+
+        '<td class="num">'+doneOf(d)+'</td>'+
         '<td class="num dim">'+(d.days_idle!==''?d.days_idle:'—')+'</td>'+
         '<td>'+(d.owner_agent||'Unassigned')+'</td>'+
         '<td class="dim">'+(d.last_call_date||'Not yet')+'</td></tr>';
@@ -4387,7 +4392,7 @@ function paintDriver(){
         '</div>'+
       '</div>'+
       '<div class="bstats">'+
-        bstat('Rides', d.total_rides||0)+
+        bstat('Completed', doneOf(d))+
         bstat('Days idle', d.days_idle!==''?d.days_idle:'—')+
         bstat('City', d.city||'—')+
       '</div>'+
@@ -4432,13 +4437,13 @@ function aboutPanel(){
       owner+
       row('Activated', d.first_ride_at)+
       row('First ride', d.first_ride_at)+
-      row('Total rides', d.total_rides||0)+
+      row('Completed rides', doneOf(d))+
       row('Last ride', d.last_ride_at)+
       row('Registered', d.registered_at)+
       row('Came from', d.source)+
       row('Vehicle', d.vehicle)+
       row('Platform status', d.platform_status)+
-      row('Completed rides', d.completed_rides)+
+      row('All rides (incl. cancelled)', d.total_rides||0)+
       row('Cancelled', d.cancelled_rides)+
       row('City', d.city)+
     '</div></div>'+
@@ -4462,7 +4467,7 @@ function tabBody(){
 function metricsPanel(){
   const d=DRV.driver;
   return '<div class="panel"><h4>Ride data</h4><div class="metrics">'+
-    '<div><div class="k">Total rides</div><div class="v">'+(d.total_rides||0)+'</div></div>'+
+    '<div><div class="k">Completed rides</div><div class="v">'+doneOf(d)+'</div></div>'+
     '<div><div class="k">Days idle</div><div class="v">'+(d.days_idle!==''?d.days_idle:'—')+'</div></div>'+
     '<div><div class="k">First ride</div><div class="v sm">'+(d.first_ride_at||'—')+'</div></div>'+
     '<div><div class="k">Last ride</div><div class="v sm">'+(d.last_ride_at||'—')+'</div></div>'+
