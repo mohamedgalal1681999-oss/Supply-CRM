@@ -226,6 +226,8 @@
   @media(max-width:700px){ .cl-row{grid-template-columns:minmax(0,1fr) auto;} .cl-row .cl-tag{grid-row:2;justify-self:start;} }
   .permrow{display:flex;gap:10px;align-items:center;padding:7px 2px;font-size:14px;border-top:1px solid var(--line);cursor:pointer;}
   .permrow input{width:17px;height:17px;}
+  /* phones (22 Oct): a wide table scrolls inside its own box, the page never scrolls sideways */
+  @media(max-width:700px){ #body table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;} }
   /* Analytics, 22 Oct */
   .an-hero .tph{align-items:flex-start;gap:16px;flex-wrap:wrap;} .an-h{margin:0 0 4px;font-size:21px;font-weight:650;letter-spacing:-.3px;}
   .an-hero .tph p{margin:0;font-size:13px;max-width:640px;line-height:1.5;}
@@ -3189,14 +3191,16 @@ function drawAgentWork(who, callsOnly){
       '<div style="display:flex;gap:10px;flex-wrap:wrap">'+stages.filter(function(st){ return by[st]; }).map(function(st){
         return '<span class="awpill">'+st+' <b>'+num(by[st])+'</b></span>'; }).join('')+
       (mine.length ? '' : '<span class="dim">None at the moment.</span>')+'</div></div>')+
-    '<div class="panel" id="agentCalls"><h4>Calls this cycle</h4><p class="dim">Loading…</p></div>';
+    '<div class="panel" id="agentCalls"><h4>Calls</h4><p class="dim">Loading…</p></div>';
   run().withSuccessHandler(function(r){
     const c=document.getElementById('agentCalls'); if(!c) return;
-    if(!r || !r.ok){ c.innerHTML='<h4>Calls this cycle</h4><p class="dim">'+esc((r&&r.msg)||'Could not load the calls')+'</p>'; return; }
-    const order=['Answered','No Answer','Busy','Switched Off','Called Back Later',"Couldn't reach him",'Wrong Number'];
+    if(!r || !r.ok){ c.innerHTML='<h4>Calls</h4><p class="dim">'+esc((r&&r.msg)||'Could not load the calls')+'</p>'; return; }
+    // the dashboard's period, as the server read it (24 Oct)
+    const when=r.range ? (r.range.key==='custom' ? (r.range.from===r.range.to ? dayName(r.range.from) : dayName(r.range.from)+' – '+dayName(r.range.to)) : r.range.label.toLowerCase()) : 'this cycle';
+    const order=['Answered','No Answer','Busy','Switched Off','Called Back Later',"Couldn't reach him",'Wrong Number','Other'];
     const st=Object.keys(r.byStatus||{}).sort(function(a,b){ return (order.indexOf(a)<0?99:order.indexOf(a))-(order.indexOf(b)<0?99:order.indexOf(b)); });
     const onb=r.calls.filter(function(x){ return /^Interested, starting onboarding/.test(x.note); }).length;
-    c.innerHTML='<div class="tph"><h4>Calls this cycle · '+num(r.total)+'</h4>'+
+    c.innerHTML='<div class="tph"><h4>Calls '+esc(when)+' · '+num(r.total)+'</h4>'+
         (r.calls.length ? '<span class="lnk" id="acToggle" onclick="toggleAgentCalls()">Show the calls</span>' : '')+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px">'+
         st.map(function(k){ return '<span class="awpill'+(k==='Answered'?' ok':'')+'">'+esc(k)+' <b>'+num(r.byStatus[k])+'</b></span>'; }).join('')+
@@ -3207,8 +3211,8 @@ function drawAgentWork(who, callsOnly){
         r.calls.map(function(x){ return '<tr onclick="openDriver(\''+x.phone+'\')"><td class="dim">'+esc(x.when)+'</td>'+
           '<td><b>'+esc(x.name||x.phone)+'</b><div class="dim" style="font-size:12px">'+x.phone+'</div></td>'+
           '<td>'+esc(x.status)+'</td><td>'+esc(x.note)+'</td></tr>'; }).join('')+'</tbody></table></div>'
-        : '<p class="dim">No calls yet this cycle.</p>');
-  }).getAgentCalls(SID, who);
+        : '<p class="dim">No calls '+esc(when)+'.</p>');
+  }).getAgentCalls(SID, who, VIEW==='today' ? DRANGE : null);
 }
 function toggleAgentCalls(){
   const l=document.getElementById('acList'), t=document.getElementById('acToggle'); if(!l) return;
@@ -4087,6 +4091,8 @@ function openBatch(){
 }
 
 function saveBatch(){
+  const st=document.getElementById('b-st'), nt=document.getElementById('b-nt');
+  if(st && st.value==='Other' && nt && !nt.value.trim()) return fieldError(nt, 'For “Other”, write in the note what it was.');
   const btn=document.getElementById('b-save');
   btn.disabled=true; btn.textContent='Saving…';
   run().withSuccessHandler(function(r){
@@ -4549,18 +4555,42 @@ function toggleResult(){
   w.style.display = st.value==='Answered' ? 'block' : 'none';
 }
 
+/* The timeline (24 Oct). Not every row in the call log is a call: hand-overs, hand stage changes and
+   merges are kept there too. Each is drawn as what it is — a hand stage change only once, as the
+   stage move it made. Sorted on the text of the time (the same everywhere, iPhones included), and
+   when two share a minute: a hand-over, then the call, then the move the call made. */
+function timeKey(t){
+  const s=String(t==null?'':t).trim().replace('T',' ');
+  const m=s.match(/^(\d{4}-\d{2}-\d{2})(?: (\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(!m) return '';
+  return m[1]+' '+String(m[2]||'00').padStart(2,'0')+':'+(m[3]||'00')+':'+(m[4]||'00');
+}
 function callEv(c){
-  return {when:c.call_date, html:'<div class="ev"><b>'+(c.call_status||'Call')+'</b> by '+(c.agent||'')+
-    '<div class="t">'+(c.call_date||'')+(c.stage_at_call?', stage was '+c.stage_at_call:'')+'</div>'+
-    (c.note?'<div style="margin-top:5px">'+esc(c.note)+'</div>':'')+'</div>'};
+  const note=String(c.note||'');
+  if(!String(c.call_status||'').trim()){                      // not a call: say what it was
+    const h=note.match(/^Reassigned from (.*) to (.+)$/);
+    if(h) return {when:c.call_date, rank:0, html:'<div class="ev sys"><b>'+(h[2]==='nobody'?'Unassigned':'Assigned to '+esc(h[2]))+'</b>'+
+      (h[1]&&h[1]!=='nobody'?' <span class="dim">from '+esc(h[1])+'</span>':'')+
+      '<div class="t">'+esc(c.call_date||'')+(c.agent?', by '+esc(c.agent):'')+'</div></div>'};
+    if(/^Stage changed by hand/.test(note)) return null;     // the stage move itself is on the timeline
+    if(/^Duplicate record merged/.test(note)) return {when:c.call_date, rank:0, html:'<div class="ev sys"><b>Duplicate merged</b>'+
+      '<div class="t">'+esc(c.call_date||'')+'</div><div style="margin-top:5px">'+esc(note)+'</div></div>'};
+    return {when:c.call_date, rank:0, html:'<div class="ev sys"><b>'+esc(note||'Update')+'</b><div class="t">'+esc(c.call_date||'')+(c.agent?', by '+esc(c.agent):'')+'</div></div>'};
+  }
+  return {when:c.call_date, rank:1, html:'<div class="ev"><b>'+esc(c.call_status)+'</b> by '+esc(c.agent||'')+
+    '<div class="t">'+esc(c.call_date||'')+(c.stage_at_call?', stage was '+esc(c.stage_at_call):'')+'</div>'+
+    (note?'<div style="margin-top:5px">'+esc(note)+'</div>':'')+'</div>'};
 }
 function stageEv(h){
-  return {when:h.changed_at, html:'<div class="ev sys">'+h.from_stage+' &rarr; <b>'+h.to_stage+'</b>'+
-    '<div class="t">'+(h.changed_at||'')+(h.trigger==='auto'?', moved by ride data':', by '+h.changed_by)+'</div></div>'};
+  const how=h.trigger==='auto' ? 'moved by ride data' : h.trigger==='set by owner' ? 'set by hand by '+esc(h.changed_by||'') : 'by '+esc(h.changed_by||'');
+  return {when:h.changed_at, rank:2, html:'<div class="ev sys">'+esc(h.from_stage||'—')+' &rarr; <b>'+esc(h.to_stage||'')+'</b>'+
+    '<div class="t">'+esc(h.changed_at||'')+', '+how+'</div></div>'};
 }
 
 function timelinePanel(events){
-  events.sort(function(a,b){ return new Date(b.when)-new Date(a.when); });
+  events=events.filter(Boolean);
+  events.sort(function(a,b){ const x=timeKey(a.when), y=timeKey(b.when);
+    return x!==y ? (x<y?1:-1) : (b.rank||0)-(a.rank||0); });
   return '<div class="panel"><h4>Timeline ('+events.length+')</h4>'+
     (events.map(function(e){return e.html;}).join('')||'<p class="dim">Nothing recorded yet.</p>')+'</div>';
 }
@@ -4571,7 +4601,7 @@ function lifecyclePanel(){
   const me=DRV.meName, since=DRV.mineSince||'';
   const ev=(DRV.history||[]).map(stageEv)
     .concat((DRV.calls||[]).filter(function(c){ return c.agent===me; }).map(callEv));
-  if(since) ev.push({when:since, html:'<div class="ev sys"><b>Assigned to you</b><div class="t">'+esc(since)+'</div></div>'});
+  if(since) ev.push({when:since, rank:0, html:'<div class="ev sys"><b>Assigned to you</b><div class="t">'+esc(since)+'</div></div>'});
   return '<p class="dim" style="margin:0 0 10px">Your own timeline with this driver: your calls'+
            (since?', and how the stage moved since he was assigned to you':', and how the stage moved')+'.</p>'+
          timelinePanel(ev);
@@ -4863,7 +4893,7 @@ function saveCall(phone){
   // an answered call says what was said — a blank one was saved by mistake and then again, properly
   if(stEl && stEl.value==='Answered' && resEl && !resEl.value){
     return fieldError(resEl, 'They picked up — choose what they said.'); }
-  if(resEl && resEl.value==='other' && ntEl && !ntEl.value.trim()){
+  if(((resEl && resEl.value==='other') || (stEl && stEl.value==='Other')) && ntEl && !ntEl.value.trim()){
     return fieldError(ntEl, 'For “Other”, write in the note what it was.'); }
   const btn=document.getElementById('sv');
   btn.disabled=true; btn.textContent='Saving…';
@@ -4885,7 +4915,7 @@ function saveCall(phone){
     else if(String(DRV.driver.follow_up_date||'').slice(0,10) && String(DRV.driver.follow_up_date).slice(0,10) <= ymdLocal(today0()))
       DRV.driver.follow_up_date = '';
     if(res.move){
-      if(isMgr()) DRV.history.unshift(res.move);
+      DRV.history.unshift(res.move);           // the agent's own move is hers to see too (the server agrees)
       DRV.driver.stage = res.move.to_stage;
       DRV.canEditStage = ME.manualStages.indexOf(res.move.to_stage) > -1;
       DRV.inStage = 0;
