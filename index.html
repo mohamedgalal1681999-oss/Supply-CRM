@@ -3908,8 +3908,46 @@ function drawUsers(){
               u.username+'\')">delete</span>'
             : '')+'</td>'+
         '</tr>'; }).join('')+
-      '</tbody></table></div></div>';
+      '</tbody></table></div></div>'+
+      (ME && ME.isOwner ? '<div class="panel" id="mailPanel"><div class="tph"><h4>Emails (@mentions, the cycle report)</h4>'+
+        '<button class="btn sm" onclick="mailTest()">Send me a test email</button></div><div id="mailLast" class="dim">…</div></div>' : '');
+    if(ME && ME.isOwner) mailShow();
   }).listUsers(SID);
+}
+/* What became of the last email, and a test that goes the whole way (24 Oct). Each step that can
+   fail is said with what to do about it. The Google-sheet version has no relay: the panel says so. */
+const MAIL_FIX={
+  link:'In Supabase → Edge Functions → Secrets, add MAIL_RELAY_URL = the Apps Script web app\'s /exec link.',
+  webapp:'In Apps Script → Deploy → Manage deployments: the web app must run as you and be open to "Anyone"; MAIL_RELAY_URL must be its /exec link.',
+  secret:'In the Google Sheet menu, run "Connect the mail relay" again (it saves the password Supabase uses).',
+  address:'That address is not on any account in Team access.',
+  gmail:'Gmail refused it — open Apps Script once and allow it to send email, or wait if the daily limit was reached.',
+  owner:'Add your own email above (change / add email), then test again.',
+  relay:'The relay answered with an error.'
+};
+function mailLine(m){
+  if(!m) return 'No email sent yet.';
+  const when=new Date(m.at), t=isNaN(when)?'':when.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return (m.ok ? '<b style="color:var(--good,#15803d)">Sent</b>' : '<b style="color:var(--alert,#b91c1c)">Not sent</b>')+' · '+esc(t)+
+    (m.to&&m.to.length?' · to '+esc(m.to.join(', ')):'')+(m.subject?'<div style="margin-top:3px">'+esc(m.subject)+'</div>':'')+
+    (m.ok ? '' : '<div style="margin-top:6px;color:var(--ink)">'+esc(m.msg||'')+'</div>'+(MAIL_FIX[m.step]?'<div style="margin-top:4px"><b>What to do:</b> '+esc(MAIL_FIX[m.step])+'</div>':''));
+}
+function mailShow(){
+  run().withSuccessHandler(function(r){
+    const el=document.getElementById('mailLast'); if(!el) return;
+    if(!r || !r.ok){ el.textContent='Email checks run on the Supabase version.'; return; }
+    el.innerHTML='Last email: '+mailLine(r.last);
+  }).mailStatus(SID);
+}
+function mailTest(){
+  const el=document.getElementById('mailLast'); if(el) el.innerHTML='Sending a test email… (up to half a minute)';
+  run().withSuccessHandler(function(r){
+    if(!el) return;
+    if(!r){ el.textContent='No answer from the server — try again.'; return; }
+    el.innerHTML = r.ok ? '<b style="color:var(--good,#15803d)">Test email sent to '+esc(r.to)+'</b> — check the inbox (and Spam).'
+      : '<b style="color:var(--alert,#b91c1c)">The test email did not go</b>'+(r.to?' (to '+esc(r.to)+')':'')+'<div style="margin-top:6px;color:var(--ink)">'+esc(r.msg||'')+'</div>'+
+        (MAIL_FIX[r.step]?'<div style="margin-top:4px"><b>What to do:</b> '+esc(MAIL_FIX[r.step])+'</div>':'');
+  }).mailTest(SID);
 }
 
 function copyText(t){
@@ -4903,7 +4941,8 @@ function saveCall(phone){
     if(!res.ok){ notice(res.msg); return; }
     if(res.mentioned){                                   // an @mention in the note: say who was told
       const m=res.mentioned; const told=(m.notified||[]).join(', ');
-      setTimeout(function(){ toast((told?'Emailed '+told:'')+((m.noEmail||[]).length?(told?' · ':'')+(m.noEmail.join(', '))+' has no email':'')); }, 600);
+      // handed to Gmail, not yet delivered: Team access → Emails says whether it went (24 Oct)
+      setTimeout(function(){ toast((told?'Email on its way to '+told:'')+((m.noEmail||[]).length?(told?' · ':'')+(m.noEmail.join(', '))+' has no email':'')); }, 600);
       if(res.noteAdded) DRV.notes = DRV.notes || [];
     }
 
