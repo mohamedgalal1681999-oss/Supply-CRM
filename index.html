@@ -228,6 +228,28 @@
   .permrow input{width:17px;height:17px;}
   /* phones (22 Oct): a wide table scrolls inside its own box, the page never scrolls sideways */
   @media(max-width:700px){ #body table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;} }
+  /* Configuration, 26 Oct */
+  .cf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .cf-top h3{margin:0 0 4px;font-size:19px;} .cf-top p{margin:0;font-size:13px;color:var(--dim);max-width:620px;line-height:1.5;}
+  .cf-seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .cf-seg button{border:0;background:var(--card);color:var(--ink);font:inherit;font-size:13px;padding:8px 14px;cursor:pointer;}
+  .cf-seg button.on{background:var(--blue);color:#fff;}
+  .cf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px;}
+  .cf-card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--card);}
+  .cf-card h4{margin:0 0 10px;font-size:14px;} .cf-card h4 em{font-style:normal;color:var(--dim);font-weight:400;font-size:12px;margin-left:6px;}
+  .cf-row{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px;align-items:center;padding:6px 0;font-size:13px;}
+  .cf-row label{color:var(--ink);} .cf-row small{display:block;color:var(--dim);font-size:11.5px;}
+  .cf-in{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden;}
+  .cf-in input{border:0;width:100%;font:inherit;font-size:14px;padding:7px 8px;text-align:right;background:transparent;color:var(--ink);}
+  .cf-in span{padding:0 8px;color:var(--dim);font-size:12px;white-space:nowrap;}
+  .cf-in.changed{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,99,214,.12);}
+  .cf-pay{display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:center;margin:6px 0;}
+  .cf-x{border:0;background:none;color:var(--dim);font-size:18px;cursor:pointer;}
+  .cf-sum{font-size:12.5px;margin-top:8px;} .cf-sum.bad{color:#b45309;}
+  .cf-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;}
+  .cf-prev table{margin-top:10px;} .cf-prev td.up{color:#15803d;font-weight:600;} .cf-prev td.down{color:#b91c1c;font-weight:600;}
+  .cf-log{font-size:12.5px;} .cf-log div{padding:7px 0;border-top:1px solid var(--line);} .cf-log div:first-child{border-top:0;}
+  @media(max-width:800px){ .cf-grid{grid-template-columns:1fr;} .cf-row{grid-template-columns:minmax(0,1fr) 110px;} }
   /* Analytics, 22 Oct */
   .an-hero .tph{align-items:flex-start;gap:16px;flex-wrap:wrap;} .an-h{margin:0 0 4px;font-size:21px;font-weight:650;letter-spacing:-.3px;}
   .an-hero .tph p{margin:0;font-size:13px;max-width:640px;line-height:1.5;}
@@ -1141,6 +1163,7 @@
     <a class="mgrOnly" data-v="users" data-perm="team">Team access</a>
     <a class="mgrOnly" data-v="export" data-perm="export">Export</a>
     <a class="mgrOnly" data-v="sync" data-perm="sync">Sync data</a>
+    <a class="mgrOnly" data-v="config" data-perm="config">Configuration</a>
 
     <div class="navfoot">
       <div class="nf-who" id="navWho"></div>
@@ -2124,6 +2147,7 @@ function refresh(){
   if(VIEW==='todos'){ showChrome(false); todoTeam(); return drawTodos(); }
   if(VIEW==='assign'){ showChrome(false); return drawAssign(); }
   if(VIEW==='users'){ showChrome(false); return drawUsers(); }
+  if(VIEW==='config'){ showChrome(false); return drawConfig(); }
   if(VIEW==='export'){ showChrome(false); return drawExport(); }
   if(VIEW==='sync'){ showChrome(false); return drawSync(); }
   if(VIEW==='kpi'){ showChrome(false); return drawKpi(); }
@@ -3913,6 +3937,98 @@ function drawUsers(){
         '<button class="btn sm" onclick="mailTest()">Send me a test email</button></div><div id="mailLast" class="dim">…</div></div>' : '');
     if(ME && ME.isOwner) mailShow();
   }).listUsers(SID);
+}
+/* ---------- Configuration (26 Oct): the KPI numbers, by hand ----------
+   The owner, or a manager given "Configuration". Each change applies from this cycle or the next;
+   closed cycles are frozen. A preview shows every agent's points and incentive before and after. */
+let CF=null, CF_FROM='this', CF_VALS=null;
+function drawConfig(){
+  const b=document.getElementById('body'); b.innerHTML=loader(); const id=stamp();
+  run().withSuccessHandler(function(r){
+    if(!current(id) || VIEW!=='config') return;
+    if(!r || !r.ok){ b.innerHTML='<div class="empty"><h3>Configuration</h3><p>'+esc((r&&r.msg)||'No answer')+'</p></div>'; return; }
+    CF=r; CF_VALS=JSON.parse(JSON.stringify(CF_FROM==='next'?r.next:r.current)); paintConfig();
+  }).getKpiConfig(SID);
+}
+function cfCycle(c){ return dayName(c.from)+' – '+dayName(c.to); }
+function cfField(key){ return (CF.fields||[]).filter(function(f){ return f[0]===key; })[0]; }
+function cfInput(key, unit, hint){
+  const f=cfField(key), base=(CF_FROM==='next'?CF.next:CF.current)[key], v=CF_VALS[key];
+  const show=f[2]==='pct' ? Math.round(v*1000)/10 : v;
+  return '<div class="cf-row"><label for="cf-'+key+'">'+esc(f[1].replace(/^[^:]+: /,''))+(hint?'<small>'+hint+'</small>':'')+'</label>'+
+    '<div class="cf-in'+(Number(v)!==Number(base)?' changed':'')+'"><input id="cf-'+key+'" inputmode="decimal" value="'+show+'" oninput="cfSet(\''+key+'\',this.value)">'+(unit?'<span>'+unit+'</span>':'')+'</div></div>';
+}
+function cfSet(key, raw){
+  const f=cfField(key), n=String(raw).trim()==='' ? '' : Number(raw);
+  CF_VALS[key]= n==='' ? '' : (f[2]==='pct' ? n/100 : n);
+  const base=(CF_FROM==='next'?CF.next:CF.current)[key], box=document.getElementById('cf-'+key);
+  if(box) box.parentNode.classList.toggle('changed', Number(CF_VALS[key])!==Number(base));
+  cfSum(); const pv=document.getElementById('cfPrev'); if(pv) pv.innerHTML='';
+}
+function cfPay(i, j, raw){ CF_VALS.payout[i][j]=String(raw).trim()==='' ? '' : Number(raw); const pv=document.getElementById('cfPrev'); if(pv) pv.innerHTML=''; }
+function cfPayAdd(){ const p=CF_VALS.payout, last=p[p.length-1]||[40,0]; p.push([Math.min(100,Number(last[0])+10), Number(last[1])]); paintConfig(); }
+function cfPayDel(i){ CF_VALS.payout.splice(i,1); paintConfig(); }
+function cfSum(){
+  const el=document.getElementById('cfSum'); if(!el) return;
+  const t=['leadPoints','activationPoints','productivityPoints','reactivationPoints'].reduce(function(s,k){ return s+(Number(CF_VALS[k])||0); },0);
+  el.className='cf-sum'+(t===100?'':' bad'); el.textContent='The four KPIs add up to '+t+' points'+(t===100?' — as they should.':' — usually 100.');
+}
+function cfFrom(w){ CF_FROM=w; CF_VALS=JSON.parse(JSON.stringify(w==='next'?CF.next:CF.current)); paintConfig(); }
+function paintConfig(){
+  const b=document.getElementById('body'), C=CF.cycles;
+  const pay=CF_VALS.payout.map(function(p,i){
+    return '<div class="cf-pay"><div class="cf-in"><span>from</span><input value="'+esc(p[0])+'" inputmode="numeric" oninput="cfPay('+i+',0,this.value)"><span>pts</span></div>'+
+      '<div class="cf-in"><input value="'+esc(p[1])+'" inputmode="numeric" oninput="cfPay('+i+',1,this.value)"><span>EGP</span></div>'+
+      '<button class="cf-x" title="Remove this step" onclick="cfPayDel('+i+')">×</button></div>'; }).join('');
+  b.innerHTML='<div class="panel"><div class="cf-top"><div><h3>Configuration</h3>'+
+      '<p>The KPI numbers every agent is measured by. A change applies from the cycle you pick, to every agent at once; '+
+      'closed cycles are frozen and never change. Preview first: it shows what each agent\'s points and incentive come to.</p></div>'+
+      '<div><div class="dim" style="font-size:12px;margin-bottom:5px">Apply from</div><div class="cf-seg">'+
+        '<button class="'+(CF_FROM==='this'?'on':'')+'" onclick="cfFrom(\'this\')">This cycle · '+esc(cfCycle(C.current))+'</button>'+
+        '<button class="'+(CF_FROM==='next'?'on':'')+'" onclick="cfFrom(\'next\')">Next cycle · '+esc(cfCycle(C.next))+'</button></div></div></div>'+
+    '<div class="cf-grid">'+
+      '<div class="cf-card"><h4>Lead to Onboarding</h4>'+cfInput('leadTarget','%','share of the book\'s leads onboarded')+cfInput('leadPoints','pts')+'</div>'+
+      '<div class="cf-card"><h4>Activation trips</h4>'+cfInput('activationTrips','trips','first-week trips a cycle, for each agent')+
+        cfInput('activationCap','trips','at most')+cfInput('activationDays','days')+cfInput('activationPoints','pts')+'</div>'+
+      '<div class="cf-card"><h4>Driver Productivity</h4>'+cfInput('productivityTrips','trips','by the book\'s working drivers, a cycle')+cfInput('productivityPoints','pts')+'</div>'+
+      '<div class="cf-card"><h4>Churned Reactivation</h4>'+cfInput('reactivationTrips','trips','by the book\'s churned drivers, a cycle')+cfInput('reactivationPoints','pts')+'</div>'+
+      '<div class="cf-card"><h4>Above a target</h4>'+cfInput('minPoolForBonus','drivers')+
+        '<div id="cfSum" class="cf-sum"></div></div>'+
+      '<div class="cf-card"><h4>The pay table <em>points → incentive</em></h4>'+pay+
+        '<button class="btn sm" style="margin-top:4px" onclick="cfPayAdd()">Add a step</button>'+
+        '<div style="margin-top:10px">'+cfInput('overStep','pts','above the top step')+cfInput('overStepMoney','EGP')+'</div></div>'+
+    '</div>'+
+    '<div class="cf-actions"><button class="btn" onclick="cfPreview()">Preview</button>'+
+      '<button class="btn" style="background:var(--good,#15803d)" onclick="cfSave()">Save from '+(CF_FROM==='next'?'the next cycle':'this cycle')+'</button>'+
+      '<span class="dim" style="font-size:12.5px">Defaults: <span class="lnk" onclick="cfDefaults()">put the original numbers back in the form</span></span></div>'+
+    '<div id="cfPrev" class="cf-prev"></div></div>'+
+    '<div class="panel"><h4>Changes made</h4><div class="cf-log">'+((CF.log||[]).length ? CF.log.map(function(l){
+      return '<div><b>'+esc(l.by)+'</b> <span class="dim">· '+esc(l.at)+' · from the cycle of '+esc(dayName(l.from))+'</span><br>'+l.changes.map(esc).join('<br>')+'</div>'; }).join('')
+      : '<span class="dim">None yet — the numbers are the original ones.</span>')+'</div></div>';
+  cfSum();
+}
+function cfDefaults(){ CF_VALS=JSON.parse(JSON.stringify(CF.defaults)); paintConfig(); }
+function cfPreview(){
+  const el=document.getElementById('cfPrev'); el.innerHTML='<p class="dim">Working it out for every agent…</p>';
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ el.innerHTML='<div class="note">'+esc((r&&r.msg)||'No answer')+'</div>'; return; }
+    const cls=function(a,b){ return a>b?'up':a<b?'down':''; };
+    el.innerHTML='<h4 style="margin:18px 0 0">This cycle with these numbers'+(CF_FROM==='next'?' <span class="dim" style="font-weight:400">(as if they applied now)</span>':'')+'</h4>'+
+      '<div style="overflow-x:auto"><table><thead><tr><th>Agent</th><th class="num">Points now</th><th class="num">With these</th><th class="num">Incentive now</th><th class="num">With these</th></tr></thead><tbody>'+
+      r.rows.map(function(x){ return '<tr><td><b>'+esc(x.agent)+'</b></td><td class="num">'+x.before+'</td><td class="num '+cls(x.after,x.before)+'">'+x.after+'</td>'+
+        '<td class="num">'+money(x.moneyBefore)+'</td><td class="num '+cls(x.moneyAfter,x.moneyBefore)+'">'+money(x.moneyAfter)+'</td></tr>'; }).join('')+
+      '<tr class="tot"><td>All agents</td><td></td><td></td><td class="num"><b>'+money(r.totalBefore)+'</b></td><td class="num '+cls(r.totalAfter,r.totalBefore)+'"><b>'+money(r.totalAfter)+'</b></td></tr>'+
+      '</tbody></table></div>';
+  }).previewKpiConfig(SID, CF_VALS);
+}
+function cfSave(){
+  const when=CF_FROM==='next' ? 'the next cycle ('+cfCycle(CF.cycles.next)+')' : 'this cycle ('+cfCycle(CF.cycles.current)+'), at once';
+  if(!confirm('Apply these numbers from '+when+' to every agent?')) return;
+  run().withSuccessHandler(function(r){
+    if(!r || !r.ok){ notice((r&&r.msg)||'Not saved'); return; }
+    toast(r.unchanged ? 'Nothing changed' : 'Saved — '+r.changes.length+' change'+(r.changes.length===1?'':'s')+' from '+dayName(r.from));
+    MEMO={}; drawConfig();
+  }).saveKpiConfig(SID, { from: CF_FROM, values: CF_VALS });
 }
 /* What became of the last email, and a test that goes the whole way (24 Oct). Each step that can
    fail is said with what to do about it. The Google-sheet version has no relay: the panel says so. */
